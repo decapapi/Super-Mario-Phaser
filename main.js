@@ -20,7 +20,7 @@ var config = {
         default: 'arcade',
         arcade: {
             gravity: { y: levelGravity },
-            debug: false
+            debug: true
         }
     },
     scene: {
@@ -113,7 +113,7 @@ function preload() {
     this.load.spritesheet('mario-grown', 'assets/entities/mario-grown.png', { frameWidth: 18, frameHeight: 32 });
     this.load.spritesheet('mario-fire', 'assets/entities/mario-fire.png', { frameWidth: 18, frameHeight: 32 });
     this.load.spritesheet('goomba', 'assets/entities/goomba.png', { frameWidth: 16, frameHeight: 16 });
-
+    
     this.load.image('arrows', 'assets/controls/arrows.png');
 
     // Load props
@@ -133,6 +133,7 @@ function preload() {
     this.load.image('block', 'assets/scenery/block.png');
     this.load.image('misteryBlock', 'assets/scenery/misteryBlock.png');
     this.load.image('emptyBlock', 'assets/scenery/emptyBlock.png');
+    this.load.image('immovableBlock', 'assets/scenery/immovableBlock.png');
 
     // Load collectibles
     this.load.spritesheet('coin', 'assets/collectibles/coin.png', { frameWidth: 16, frameHeight: 16 });
@@ -203,26 +204,26 @@ function create() {
 }
 
 function createHUD() {
-    this.scoreText = this.add.text(32, 32, '', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'center' });
+    this.scoreText = this.add.text(32, 32, '', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'left'});
     this.scoreText.setScrollFactor(0).depth = 3;
 
-    this.highScoreText = this.add.text(screenWidth / 2, 32, 'HIGH SCORE\n 00000', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'center' }).setOrigin(0.5, 0);
+    this.highScoreText = this.add.text(screenWidth / 2, 32, 'HIGH SCORE\n 000000', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 65), align: 'center'}).setOrigin(0.5, 0);
     this.highScoreText.setScrollFactor(0).depth = 3;
 
     let localHighScore = localStorage.getItem('high-score');
     if (localHighScore !== null) {
-        this.highScoreText.setText('HIGH SCORE\n' + localHighScore.toString().padStart(5, '0'))
+        this.highScoreText.setText('HIGH SCORE\n' + localHighScore.toString().padStart(6, '0'))
     }
 }
 
 function updateScore() {
     if (!this.scoreText) return;
 
-    this.scoreText.setText('SCORE\n' + score.toString().padStart(5, '0'));
+    this.scoreText.setText('MARIO\n' + score.toString().padStart(6, '0'));
 }
 
 function createControls() {
-
+    
     // Create JoyStick
     // https://codepen.io/rexrainbow/pen/oyqvQY
 
@@ -255,7 +256,7 @@ function gameOverScreen() {
     if (localStorage.getItem('high-score') !== null) {
         if (localStorage.getItem('high-score') < score) {
             localStorage.setItem('high-score', score);
-            this.highScoreText.setText('NEW HIGH SCORE!\n' + score.toString().padStart(5, '0'))
+            this.highScoreText.setText('NEW HIGH SCORE!\n' + score.toString().padStart(6, '0'))
         }
     } else {
         localStorage.setItem('high-score', score);
@@ -298,8 +299,8 @@ function gameOverFunc() {
     player.body.setSize(16, 16).setOffset(0);
     player.setVelocityX(0);
     setTimeout(() => {
-        player.body.enable = true;
-        player.setVelocityY(-velocityY * 1.1);
+    player.body.enable = true;
+    player.setVelocityY(-velocityY * 1.1);
     }, 500);
     this.musicTheme.pause();
     this.gameOverSong.play();
@@ -315,11 +316,11 @@ function winScreen() {
     if (localStorage.getItem('high-score') !== null) {
         if (localStorage.getItem('high-score') < score) {
             localStorage.setItem('high-score', score);
-            this.highScoreText.setText('NEW HIGH SCORE!\n' + score.toString().padStart(5, '0'))
+            this.highScoreText.setText('NEW HIGH SCORE!\n' + score.toString().padStart(6, '0'))
         }
     } else {
         localStorage.setItem('high-score', score);
-        this.highScoreText.setText('NEW HIGH SCORE!\n' + score.toString().padStart(5, '0'))
+        this.highScoreText.setText('NEW HIGH SCORE!\n' + score.toString().padStart(6, '0'))
     }
 
     const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
@@ -339,13 +340,13 @@ function winScreen() {
 
 // This will generate a random coordinate, that can't be within a hole
 
-function generateRandomCoordinate() {
+function generateRandomCoordinate(entitie=false) {
 
-    let coordinate = Phaser.Math.Between(0, worldWidth);
+    let coordinate = Phaser.Math.Between(entitie ? startOffset * 1.5 : 0, entitie ? worldWidth - (worldWidth / 20) : worldWidth);
     for (let hole of worldHolesCoords) {
-        if (coordinate >= hole.start && coordinate <= (hole.end + platformPiecesWidth)) {
-            return coordinate + platformPiecesWidth * 2;
-        }
+      if (coordinate >= hole.start && coordinate <= (hole.end + platformPiecesWidth)) {
+        return coordinate + platformPiecesWidth * 2;
+      }
     }
     return coordinate;
 }
@@ -376,10 +377,11 @@ function generateWorld() {
     let pieceStart = 0;
     // This will tell us if last generated piece of platform was empty, to avoid generating another empty piece next to it.
     let lastWasHole = 0;
-
+    
     this.platformGroup = this.add.group();
+    this.fallProtectionGroup = this.add.group();
 
-    for (i = 0; i <= platformPieces; i++) {
+    for (i=0; i <= platformPieces; i++) {
         // Holes will have a 10% chance of spawning
         let number = Phaser.Math.Between(0, 100);
 
@@ -397,15 +399,22 @@ function generateWorld() {
             this.physics.add.collider(player, Npiece);
 
             // Save every hole start and end for later use
-            worldHolesCoords.push({
-                start: pieceStart,
-                end: pieceStart + platformPiecesWidth
-            });
+            worldHolesCoords.push({ start: pieceStart, 
+                end: pieceStart + platformPiecesWidth});
 
         } else {
             lastWasHole = 2;
+            this.fallProtectionGroup.add(this.add.rectangle(pieceStart, screenHeight - platformHeight, 5, 5).setOrigin(0, 1));
+            this.fallProtectionGroup.add(this.add.rectangle(pieceStart - platformPiecesWidth, screenHeight - platformHeight, 5, 5).setOrigin(1, 1));
         }
         pieceStart += platformPiecesWidth;
+    }
+
+    let fallProtections = this.fallProtectionGroup.getChildren();
+    for (let i = 0; i < fallProtections.length; i++) {
+        this.physics.add.existing(fallProtections[i]);
+        fallProtections[i].body.allowGravity = false;
+        fallProtections[i].body.immovable = true;
     }
 
     let propsY = screenHeight - (platformHeight);
@@ -422,7 +431,7 @@ function generateWorld() {
             }
         }
     }
-
+    
     //> Bushes
     for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 960), Math.trunc(worldWidth / 760)); i++) {
         let x = generateRandomCoordinate();
@@ -479,7 +488,7 @@ function raiseFlag() {
     setTimeout(() => {
         this.winSound.play();
     }, 1000);
-
+    
     flagRaised = true;
     playerBlocked = true;
 
@@ -494,24 +503,26 @@ function generateStructures() {
 
     // pieceStart will be the next platform piece start pos. This value will be modified after each execution
     let pieceStart = platformPiecesWidth * 3;
-
+    
     this.blocksGroup = this.add.group();
     this.misteryBlocksGroup = this.add.group();
 
-    for (i = 0; i <= platformPieces; i++) {
+    for (i=0; i <= platformPieces; i++) {
 
         for (let hole of worldHolesCoords) {
-            if (pieceStart == hole.start || pieceStart == hole.end)
+            if (pieceStart == hole.start || pieceStart == hole.end || 
+                pieceStart - platformPiecesWidth == hole.start || pieceStart + platformPiecesWidth == hole.end ||
+                pieceStart - platformPiecesWidth == hole.start || pieceStart + platformPiecesWidth == hole.end) 
                 continue;
         }
 
         // Structures will have a 70% chance of spawning
-        let number = Phaser.Math.Between(0, 100)
+        let number = 30//Phaser.Math.Between(0, 100)
 
         if (number <= 69 && !(pieceStart >= (worldWidth - platformPiecesWidth * 3))) {
 
-            let random = Phaser.Math.Between(0, 6);
-
+            let random = Phaser.Math.Between(0, 5);
+    
             //> Generate random structure an add it to blocksGroup
             switch (random) {
                 case 0:
@@ -531,7 +542,7 @@ function generateStructures() {
                     this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3.6, 0.5));
                     this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(5.61, 0.5));
                     this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4.6, 0.5));
-
+                    
                     this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2.6, 0.5));
                     this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-4.61, 0.5));
                     this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3.6, 0.5));
@@ -572,9 +583,9 @@ function generateStructures() {
                             this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
                             break;
                         case 3:
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
+                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.5 , 0.5));
                             this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
+                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5 , 0.5));
                             break;
                         case 4:
                             this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.75, 0.5));
@@ -589,12 +600,10 @@ function generateStructures() {
                     this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
                     this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
                     break;
-                case 6:
-
-                    break;
             }
 
         }
+        
         // Structures will generate every 2/4 platform pieces
         pieceStart += platformPiecesWidth * Phaser.Math.Between(2, 4);
     }
@@ -609,7 +618,7 @@ function generateStructures() {
         //misteryBlocks[i].anims.play('default', true)
         this.physics.add.collider(player, misteryBlocks[i], revealHiddenBlock, null, this);
     }
-
+    
     // Apply player collision with blocks
     let blocks = this.blocksGroup.getChildren();
     this.physics.add.collider(player, blocks);
@@ -658,7 +667,7 @@ function revealHiddenBlock(player, block) {
                 });
             }, 300);
             setTimeout(() => { coin.destroy(); }, 600);
-        } else if (random >= 90 && random < 96) {
+        } else if (random >= 90 && random < 96 ) {
             this.powerUpAppears.play();
             let mushroom = this.physics.add.sprite(block.getBounds().x, block.getBounds().y, 'super-mushroom').setScale(screenHeight / 345).setOrigin(0).setBounce(1, 0);
             this.tweens.add({
@@ -702,23 +711,23 @@ function consumeMushroom(player, mushroom) {
     addToScore.call(this, 1000, mushroom);
     mushroom.destroy();
 
-    if (playerState > 0)
-        return;
+    if (playerState > 0 )
+    return;
 
     playerBlocked = true;
     this.physics.pause();
     player.setTint(0xfefefe).anims.play('idle');
-    setTimeout(() => {
+    setTimeout(()=> {
         player.anims.play('grown-mario-idle');
-        setTimeout(() => {
+        setTimeout(()=> {
             player.anims.play('idle');
-            setTimeout(() => {
+            setTimeout(()=> {
                 player.anims.play('grown-mario-idle');
-                setTimeout(() => {
+                setTimeout(()=> {
                     player.anims.play('idle');
-                    setTimeout(() => {
+                    setTimeout(()=> {
                         player.anims.play('grown-mario-idle');
-                        setTimeout(() => {
+                        setTimeout(()=> {
                             player.clearTint();
                         }, 100);
                     }, 100);
@@ -727,7 +736,7 @@ function consumeMushroom(player, mushroom) {
         }, 100);
     }, 100);
 
-    setTimeout(() => {
+    setTimeout(() => { 
         this.physics.resume();
         playerBlocked = false;
         playerState = 1;
@@ -740,25 +749,25 @@ function consumeFireflower(player, fireFlower) {
     addToScore.call(this, 1000, fireFlower);
     fireFlower.destroy();
 
-    if (playerState > 1)
-        return;
+    if (playerState > 1 )
+    return;
 
     let anim = playerState > 0 ? 'grown-mario-idle' : 'idle';
 
     playerBlocked = true;
     this.physics.pause();
     player.setTint(0xfefefe).anims.play(anim);
-    setTimeout(() => {
+    setTimeout(()=> {
         player.anims.play('fire-mario-idle');
-        setTimeout(() => {
+        setTimeout(()=> {
             player.anims.play(anim);
-            setTimeout(() => {
+            setTimeout(()=> {
                 player.anims.play('fire-mario-idle');
-                setTimeout(() => {
+                setTimeout(()=> {
                     player.anims.play(anim);
-                    setTimeout(() => {
+                    setTimeout(()=> {
                         player.anims.play('fire-mario-idle');
-                        setTimeout(() => {
+                        setTimeout(()=> {
                             player.clearTint();
                         }, 100);
                     }, 100);
@@ -767,7 +776,7 @@ function consumeFireflower(player, fireFlower) {
         }, 100);
     }, 100);
 
-    setTimeout(() => {
+    setTimeout(() => { 
         this.physics.resume();
         playerBlocked = false;
         playerState = 2;
@@ -784,7 +793,7 @@ function addToScore(num, originObject) {
     }
 
     if (originObject != null) {
-        let textEffect = this.add.text(originObject.getBounds().x, originObject.getBounds().y, num, { fontFamily: 'pixel_nums', fontSize: (screenWidth / 150), align: 'center' }).setOrigin(0);
+        let textEffect = this.add.text(originObject.getBounds().x, originObject.getBounds().y, num, { fontFamily: 'pixel_nums', fontSize: (screenWidth / 150), align: 'center'}).setOrigin(0);
         textEffect.smoothed = true;
         textEffect.depth = 5;
         this.tweens.add({
@@ -792,13 +801,13 @@ function addToScore(num, originObject) {
             duration: 400,
             y: textEffect.y - screenHeight / 6.5
         });
-        setTimeout(() => {
+        setTimeout(() => { 
             this.tweens.add({
                 targets: textEffect,
                 duration: 200,
                 alpha: 0
             });
-        }, 200);
+         }, 200);
 
         setTimeout(() => { textEffect.destroy(); }, 400);
     }
@@ -902,7 +911,7 @@ function createGoombas() {
     this.goombasGroup = this.add.group();
 
     for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 960), Math.trunc(worldWidth / 760)); i++) {
-        let x = generateRandomCoordinate();
+        let x = generateRandomCoordinate(true);
         let goomba = this.physics.add.sprite(x, screenHeight - platformHeight, 'goomba').setOrigin(0.5, 1).setBounce(1, 0).setCollideWorldBounds(true);
         goomba.anims.play('goomba-walk', true)
         goomba.scale = screenHeight / 376;
@@ -913,6 +922,7 @@ function createGoombas() {
         } else {
             goomba.setVelocityX(-110)
         }
+        goomba.setMaxVelocity(250, levelGravity)
         this.goombasGroup.add(goomba);
         let platformPieces = this.platformGroup.getChildren();
         this.physics.add.collider(goomba, platformPieces);
@@ -924,6 +934,9 @@ function createGoombas() {
         this.physics.add.collider(goomba, goombas);
         this.physics.add.overlap(player, goomba, checkGoombaCollision, null, this);
     }
+
+    // Create collision with fall protections to stop goombas from falling off the map
+    this.physics.add.collider(this.goombasGroup.getChildren(), this.fallProtectionGroup.getChildren(), revealHiddenBlock, null, this);
 }
 
 function checkGoombaCollision(player, goomba) {
@@ -935,7 +948,7 @@ function checkGoombaCollision(player, goomba) {
             return;
         }
     }
-
+    
     if (goombaBeingStomped) {
         goomba.anims.play('goomba-hurt', true);
         goomba.body.enable = false;
@@ -955,9 +968,9 @@ function checkGoombaCollision(player, goomba) {
         }, 500);
         return;
     }
-
+    
     decreasePlayerState.call(this);
-
+        
     return;
 }
 
@@ -999,42 +1012,26 @@ function decreasePlayerState() {
 function update(delta) {
     if (gameOver || gameWinned) return;
 
-    /*
-    if (mobileDevice) {
-        gameOver = true;
-        const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
-        let gameOverScreen = this.add.rectangle(0, screenHeight / 2, worldWidth, screenHeight, 0x000000).setScrollFactor(0);
-        gameOverScreen.alpha = 0;
-        gameOverScreen.depth = 2;
-        this.tweens.add({
-            targets: gameOverScreen,
-            duration: 200,
-            alpha: 1
-        });
-        this.add.bitmapText(screenCenterX, screenHeight / 3, 'carrier_command', 'OOOPS!', screenWidth / 22.5).setOrigin(0.5).depth = 3;
-        this.add.bitmapText(screenCenterX, screenHeight / 1.7, 'carrier_command', 'This game is still not\n\noptimized for mobile devices', screenWidth / 50, 1).setOrigin(0.5).depth = 3;
-    }
-    */
     // Check if player has fallen
     if (player.y > screenHeight - 10) {
         gameOver = true;
         gameOverFunc.call(this);
         return;
     }
-
+   
     updateScore.call(this);
 
     // Win animation
     if (playerBlocked && flagRaised) {
         player.setVelocityX(200);
         if (playerState == 0)
-            player.anims.play('run', true).flipX = false;
+        player.anims.play('run', true).flipX = false;
         if (playerState == 1)
-            player.anims.play('grown-mario-run', true).flipX = false;
+        player.anims.play('grown-mario-run', true).flipX = false;
         if (playerState == 2)
-            player.anims.play('fire-mario-run', true);
+        player.anims.play('fire-mario-run', true);
 
-        if (player.x >= worldWidth - (worldWidth / 75)) {
+        if(player.x >= worldWidth - (worldWidth / 75)) {
             this.tweens.add({
                 targets: player,
                 duration: 75,
@@ -1059,7 +1056,7 @@ function update(delta) {
     // > Vertical movement
     if ((cursors.up.isDown || controlKeys.SPACE.isDown || this.joyStick.up) && player.body.touching.down) {
         this.jumpSound.play();
-        (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown || this.joyStick.down)) ? player.setVelocityY(-velocityY / 1.25) : player.setVelocityY(-velocityY);
+        (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) ? player.setVelocityY(-velocityY / 1.25) : player.setVelocityY(-velocityY);
     }
 
     // > Horizontal movement and animations
@@ -1070,14 +1067,14 @@ function update(delta) {
     if (cursors.left.isDown || controlKeys.A.isDown || this.joyStick.left) {
         smoothedControls.moveLeft(delta);
         if (playerState == 0)
-            player.anims.play('run', true).flipX = true;
+        player.anims.play('run', true).flipX = true;
 
         if (playerState == 1)
-            player.anims.play('grown-mario-run', true).flipX = true;
+        player.anims.play('grown-mario-run', true).flipX = true;
 
         if (playerState == 2)
-            player.anims.play('fire-mario-run', true).flipX = true;
-
+        player.anims.play('fire-mario-run', true).flipX = true;
+        
         // Lerp the velocity towards the max run using the smoothed controls.
         // This simulates a player controlled acceleration.
         oldVelocityX = player.body.velocity.x;
@@ -1085,16 +1082,16 @@ function update(delta) {
         newVelocityX = Phaser.Math.Linear(oldVelocityX, targetVelocityX, -smoothedControls.value);
 
         player.setVelocityX(newVelocityX);
-    } else if (cursors.right.isDown || controlKeys.D.isDown || this.joyStick.right) {
+    } else if (cursors.right.isDown  || controlKeys.D.isDown|| this.joyStick.right) {
         smoothedControls.moveRight(delta);
         if (playerState == 0)
-            player.anims.play('run', true).flipX = false;
+        player.anims.play('run', true).flipX = false;
 
         if (playerState == 1)
-            player.anims.play('grown-mario-run', true).flipX = false;
+        player.anims.play('grown-mario-run', true).flipX = false;
 
         if (playerState == 2)
-            player.anims.play('fire-mario-run', true).flipX = false;
+        player.anims.play('fire-mario-run', true).flipX = false;
 
         // Lerp the velocity towards the max run using the smoothed controls.
         // This simulates a player controlled acceleration.
@@ -1102,7 +1099,7 @@ function update(delta) {
         targetVelocityX = playerController.speed.run;
         newVelocityX = Phaser.Math.Linear(oldVelocityX, targetVelocityX, smoothedControls.value);
 
-        player.setVelocityX(newVelocityX);
+        player.setVelocityX(newVelocityX);    
     } else {
         if (player.body.velocity.x != 0)
             smoothedControls.reset();
@@ -1110,49 +1107,49 @@ function update(delta) {
             player.setVelocityX(0);
         if (!cursors.up.isDown) {
             if (playerState == 0)
-                player.anims.play('idle', true);
-
+            player.anims.play('idle', true);
+    
             if (playerState == 1)
-                player.anims.play('grown-mario-idle', true);
+            player.anims.play('grown-mario-idle', true);
 
             if (playerState == 2)
-                player.anims.play('fire-mario-idle', true);
+            player.anims.play('fire-mario-idle', true);
         }
     }
 
-    if (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown || this.joyStick.down)) {
+    if (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) {
 
         if (playerState == 1)
-            player.anims.play('grown-mario-crouch', true);
+        player.anims.play('grown-mario-crouch', true);
 
         if (playerState == 2)
-            player.anims.play('fire-mario-crouch', true);
+        player.anims.play('fire-mario-crouch', true);
 
         if (player.body.touching.down) {
             player.setVelocityX(0);
-        }
+        } 
 
         player.body.setSize(16, 22).setOffset(0.5, 10.5);
 
         return;
     } else {
         if (playerState > 0)
-            player.body.setSize(16, 32).setOffset(1, 0);
+            player.body.setSize(16, 32).setOffset(1,0);
 
         if (playerState == 0)
             player.body.setSize(16, 16).setOffset(0.3, 0.5);
     }
-
+    
     // Apply jump animation
     if (!player.body.touching.down) {
         if (playerState == 0)
-            player.anims.play('jump', true);
+        player.anims.play('jump', true);
 
         if (playerState == 1)
-            player.anims.play('grown-mario-jump', true);
+        player.anims.play('grown-mario-jump', true);
 
         if (playerState == 2)
-            player.anims.play('fire-mario-jump', true);
+        player.anims.play('fire-mario-jump', true);
     }
 }
 
