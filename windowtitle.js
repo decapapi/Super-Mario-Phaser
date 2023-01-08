@@ -11,7 +11,7 @@ function isBlackSpace(letter) {
 function positiveTitle() {
 
     if (isBlackSpace(title.charAt(index)))
-    index++
+        index++
 
     document.title = '🗿 - ' + title.substring(0, index);
     index++;
@@ -19,16 +19,16 @@ function positiveTitle() {
     if (index > title.length) {
         clearInterval(interval);
         interval = setInterval(negativeTitle, 400);
-  } 
+    }
 }
 
 function negativeTitle() {
     if (isBlackSpace(title.charAt(index)))
-    index--
+        index--
 
     document.title = '🗿 - ' + title.substring(0, index);
     index--;
-  
+
     if (index < 1) {
         clearInterval(interval);
         interval = setInterval(positiveTitle, 400);

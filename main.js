@@ -20,7 +20,7 @@ var config = {
         default: 'arcade',
         arcade: {
             gravity: { y: levelGravity },
-            debug: true
+            debug: false
         }
     },
     scene: {
@@ -50,6 +50,8 @@ var playerController;
 var playerState = 0;
 var playerInvulnerable = false;
 var playerBlocked = false;
+var playerFiring = false;
+var fireInCooldown = false;
 
 var flagRaised = false;
 
@@ -59,6 +61,7 @@ var controlKeys = {
     A: null,
     S: null,
     D: null,
+    Q: null,
     SPACE: null
 };
 
@@ -113,7 +116,9 @@ function preload() {
     this.load.spritesheet('mario-grown', 'assets/entities/mario-grown.png', { frameWidth: 18, frameHeight: 32 });
     this.load.spritesheet('mario-fire', 'assets/entities/mario-fire.png', { frameWidth: 18, frameHeight: 32 });
     this.load.spritesheet('goomba', 'assets/entities/goomba.png', { frameWidth: 16, frameHeight: 16 });
-    
+    this.load.spritesheet('fireball', 'assets/entities/fireball.png', { frameWidth: 8, frameHeight: 8 });
+    this.load.spritesheet('fireball-explosion', 'assets/entities/fireball-explosion.png', { frameWidth: 16, frameHeight: 16 });
+
     this.load.image('arrows', 'assets/controls/arrows.png');
 
     // Load props
@@ -153,6 +158,7 @@ function preload() {
     this.load.audio('powerdown', 'assets/sound/powerdown.mp3');
     this.load.audio('goomba-stomp', 'assets/sound/goomba-stomp.wav');
     this.load.audio('flagpole', 'assets/sound/flagpole.mp3');
+    this.load.audio('fireball', 'assets/sound/fireball.mp3');
 
     // Load Fonts
     this.load.bitmapFont('carrier_command', 'assets/fonts/carrier_command.png', 'assets/fonts/carrier_command.xml');
@@ -172,6 +178,7 @@ function initSounds() {
     this.powerDown = this.sound.add('powerdown', { volume: 0.2 });
     this.goombaStomp = this.sound.add('goomba-stomp', { volume: 1 });
     this.flagPole = this.sound.add('flagpole', { volume: 0.2 });
+    this.fireball = this.sound.add('fireball', { volume: 0.2 });
 }
 
 function create() {
@@ -179,6 +186,9 @@ function create() {
         time: {
             leftDown: 0,
             rightDown: 0
+        },
+        direction: {
+            positive: true
         },
         speed: {
             run: velocityX,
@@ -194,8 +204,8 @@ function create() {
 
     createAnimations.call(this);
     createPlayer.call(this);
-    generateWorld.call(this);
-    generateStructures.call(this);
+    drawWorld.call(this);
+    generateLevel.call(this);
     createGoombas.call(this);
     createControls.call(this);
     createHUD.call(this);
@@ -246,6 +256,7 @@ function createControls() {
     controlKeys.A = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     controlKeys.S = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     controlKeys.D = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    controlKeys.Q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     controlKeys.SPACE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 }
 
@@ -342,7 +353,10 @@ function winScreen() {
 
 function generateRandomCoordinate(entitie=false) {
 
-    let coordinate = Phaser.Math.Between(entitie ? startOffset * 1.5 : 0, entitie ? worldWidth - (worldWidth / 20) : worldWidth);
+    let startPos = entitie ? startOffset * 1.5 : 0;
+    let endPos = entitie ? (worldWidth - (worldWidth / 25)) : worldWidth;
+
+    let coordinate = Phaser.Math.Between(startPos, endPos);
     for (let hole of worldHolesCoords) {
       if (coordinate >= hole.start && coordinate <= (hole.end + platformPiecesWidth)) {
         return coordinate + platformPiecesWidth * 2;
@@ -353,9 +367,8 @@ function generateRandomCoordinate(entitie=false) {
 
 // World generation
 
-function generateWorld() {
-
-    //Drawing scenery
+function drawWorld() {
+    //Drawing scenery props
 
     //> Drawing the Sky
     this.add.rectangle(0, 0, worldWidth, screenHeight, 0x8585FF).setOrigin(0);
@@ -369,52 +382,6 @@ function generateWorld() {
         } else {
             this.add.image(x, y, 'cloud2').scale = screenHeight / 1725;
         }
-    }
-
-    //> Creating the platform
-
-    // pieceStart will be the next platform piece start pos. This value will be modified after each execution
-    let pieceStart = 0;
-    // This will tell us if last generated piece of platform was empty, to avoid generating another empty piece next to it.
-    let lastWasHole = 0;
-    
-    this.platformGroup = this.add.group();
-    this.fallProtectionGroup = this.add.group();
-
-    for (i=0; i <= platformPieces; i++) {
-        // Holes will have a 10% chance of spawning
-        let number = Phaser.Math.Between(0, 100);
-
-        // Check if its not a hole, this means is not that 10%, is not in the spawn safe area and is not close to the end castle.
-        if (pieceStart >= (worldWidth - platformPiecesWidth * 4) || number <= 89 || pieceStart <= screenWidth || lastWasHole > 0 || pieceStart >= worldWidth - (worldWidth / 40)) {
-            lastWasHole--;
-
-            //> Create platform
-            let Npiece = this.add.tileSprite(pieceStart, screenHeight, platformPiecesWidth, platformHeight, 'floorbricks').setScale(1).setOrigin(1);
-            this.physics.add.existing(Npiece);
-            Npiece.body.immovable = true;
-            Npiece.body.allowGravity = false;
-            this.platformGroup.add(Npiece);
-            // Apply player collision with platform
-            this.physics.add.collider(player, Npiece);
-
-            // Save every hole start and end for later use
-            worldHolesCoords.push({ start: pieceStart, 
-                end: pieceStart + platformPiecesWidth});
-
-        } else {
-            lastWasHole = 2;
-            this.fallProtectionGroup.add(this.add.rectangle(pieceStart, screenHeight - platformHeight, 5, 5).setOrigin(0, 1));
-            this.fallProtectionGroup.add(this.add.rectangle(pieceStart - platformPiecesWidth, screenHeight - platformHeight, 5, 5).setOrigin(1, 1));
-        }
-        pieceStart += platformPiecesWidth;
-    }
-
-    let fallProtections = this.fallProtectionGroup.getChildren();
-    for (let i = 0; i < fallProtections.length; i++) {
-        this.physics.add.existing(fallProtections[i]);
-        fallProtections[i].body.allowGravity = false;
-        fallProtections[i].body.immovable = true;
     }
 
     let propsY = screenHeight - (platformHeight);
@@ -460,7 +427,6 @@ function generateWorld() {
     this.physics.add.existing(this.finalFlagMast);
     this.finalFlagMast.body.setSize(3, 167);
     this.finalFlagMast.immovable = true;
-    this.physics.add.collider(this.platformGroup.getChildren(), this.finalFlagMast);
     this.physics.add.collider(player, this.finalFlagMast, null, raiseFlag, this);
 
     //> Flag
@@ -469,6 +435,170 @@ function generateWorld() {
 
     //> Castle
     this.add.image(worldWidth - (worldWidth / 75), propsY, 'castle').setOrigin(0.5, 1).scale = screenHeight / 300;
+}
+
+function generateLevel() {
+    //> Creating the platform
+
+    // pieceStart will be the next platform piece start pos. This value will be modified after each execution
+    let pieceStart = 0;
+    // This will tell us if last generated piece of platform was empty, to avoid generating another empty piece next to it.
+    let lastWasHole = 0;
+    // Structures will generate every 2/4 platform pieces
+    let lastWasStructure = 0;
+
+    this.platformGroup = this.add.group();
+    this.fallProtectionGroup = this.add.group();
+    this.blocksGroup = this.add.group();
+    this.misteryBlocksGroup = this.add.group();
+
+    for (i=0; i <= platformPieces; i++) {
+        // Holes will have a 10% chance of spawning
+        let number = Phaser.Math.Between(0, 100);
+
+        // Check if its not a hole, this means is not that 10%, is not in the spawn safe area and is not close to the end castle.
+        if (pieceStart >= (worldWidth - platformPiecesWidth * 4) || number <= 89 || pieceStart <= screenWidth || lastWasHole > 0 || pieceStart >= worldWidth - (worldWidth / 40)) {
+            lastWasHole--;
+
+            //> Create platform
+            let Npiece = this.add.tileSprite(pieceStart, screenHeight, platformPiecesWidth, platformHeight, 'floorbricks').setScale(1).setOrigin(1);
+            this.physics.add.existing(Npiece);
+            Npiece.body.immovable = true;
+            Npiece.body.allowGravity = false;
+            this.platformGroup.add(Npiece);
+            // Apply player collision with platform
+            this.physics.add.collider(player, Npiece);
+
+            // Save every hole start and end for later use
+            worldHolesCoords.push({ start: pieceStart, 
+                end: pieceStart + platformPiecesWidth});
+
+            //> Creating world structures
+
+            if (!(pieceStart >= (worldWidth - platformPiecesWidth * 3)) && pieceStart >= platformPiecesWidth * 3 && lastWasHole < 1 && lastWasStructure < 1) {
+                // Structures will have a 65% chance of spawning
+
+                let random = Phaser.Math.Between(0, 5);
+                //> Generate random structure an add it to their blocksGroup
+
+                switch (random) {
+                    case 0:
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345).setOrigin(1.25, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345).setOrigin(-0.25, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+    
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3.6, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(5.61, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4.6, 0.5));
+    
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2.6, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-4.61, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3.6, 0.5));
+                        break;
+                    case 1:
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3.6, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(5.61, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4.6, 0.5));
+                        
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2.6, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-4.61, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3.6, 0.5));
+    
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                        break;
+                    case 2:
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
+                        break;
+                    case 3:
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(0, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1, 0.5));
+                        break;
+                    case 4:
+                        let random = Phaser.Math.Between(0, 4)
+                        switch (random) {
+                            case 0:
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3, 0.5));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4, 0.5));
+                                break;
+                            case 1:
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3, 0.5));
+                                break;
+                            case 2:
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                                break;
+                            case 3:
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.5 , 0.5));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5 , 0.5));
+                                break;
+                            case 4:
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.75, 0.5));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(0.75, 0.5));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.25, 0.5));
+                                this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-1.25, 0.5));
+                                break;
+                        }
+                        break;
+                    case 5:
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345).setOrigin(0.75, 0.5));
+                        this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
+                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
+                        break;
+                    }
+                lastWasStructure = Phaser.Math.Between(1, 4);
+            }
+            else {
+                lastWasStructure--;
+            }
+        } else {
+            lastWasHole = 2;
+            this.fallProtectionGroup.add(this.add.rectangle(pieceStart, screenHeight - platformHeight, 5, 5).setOrigin(0, 1));
+            this.fallProtectionGroup.add(this.add.rectangle(pieceStart - platformPiecesWidth, screenHeight - platformHeight, 5, 5).setOrigin(1, 1));
+        }
+        pieceStart += platformPiecesWidth;
+    }
+
+    let fallProtections = this.fallProtectionGroup.getChildren();
+    for (let i = 0; i < fallProtections.length; i++) {
+        this.physics.add.existing(fallProtections[i]);
+        fallProtections[i].body.allowGravity = false;
+        fallProtections[i].body.immovable = true;
+    }
+
+    // Stablish properties for every generated structure
+    let misteryBlocks = this.misteryBlocksGroup.getChildren();
+    for (let i = 0; i < misteryBlocks.length; i++) {
+        this.physics.add.existing(misteryBlocks[i]);
+        misteryBlocks[i].body.allowGravity = false;
+        misteryBlocks[i].body.immovable = true;
+        misteryBlocks[i].depth = 2
+        //misteryBlocks[i].anims.play('default', true)
+        this.physics.add.collider(player, misteryBlocks[i], revealHiddenBlock, null, this);
+    }
+    
+    // Apply player collision with blocks
+    let blocks = this.blocksGroup.getChildren();
+    this.physics.add.collider(player, blocks);
+    for (let i = 0; i < blocks.length; i++) {
+        this.physics.add.existing(blocks[i]);
+        blocks[i].body.allowGravity = false;
+        blocks[i].body.immovable = true;
+    }
+
+    this.physics.add.collider(this.platformGroup.getChildren(), this.finalFlagMast);
 }
 
 function raiseFlag() {
@@ -495,138 +625,6 @@ function raiseFlag() {
     addToScore.call(this, 2000);
 
     return false;
-}
-
-function generateStructures() {
-
-    //> Creating world structures
-
-    // pieceStart will be the next platform piece start pos. This value will be modified after each execution
-    let pieceStart = platformPiecesWidth * 3;
-    
-    this.blocksGroup = this.add.group();
-    this.misteryBlocksGroup = this.add.group();
-
-    for (i=0; i <= platformPieces; i++) {
-
-        for (let hole of worldHolesCoords) {
-            if (pieceStart == hole.start || pieceStart == hole.end || 
-                pieceStart - platformPiecesWidth == hole.start || pieceStart + platformPiecesWidth == hole.end ||
-                pieceStart - platformPiecesWidth == hole.start || pieceStart + platformPiecesWidth == hole.end) 
-                continue;
-        }
-
-        // Structures will have a 70% chance of spawning
-        let number = 30//Phaser.Math.Between(0, 100)
-
-        if (number <= 69 && !(pieceStart >= (worldWidth - platformPiecesWidth * 3))) {
-
-            let random = Phaser.Math.Between(0, 5);
-    
-            //> Generate random structure an add it to blocksGroup
-            switch (random) {
-                case 0:
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345).setOrigin(1.25, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345).setOrigin(-0.25, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3.6, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(5.61, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4.6, 0.5));
-
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2.6, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-4.61, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3.6, 0.5));
-                    break;
-                case 1:
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3.6, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(5.61, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4.6, 0.5));
-                    
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2.6, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-4.61, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3.6, 0.5));
-
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                    break;
-                case 2:
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                    break;
-                case 3:
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(0, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1, 0.5));
-                    break;
-                case 4:
-                    let random = Phaser.Math.Between(0, 4)
-                    switch (random) {
-                        case 0:
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3, 0.5));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(4, 0.5));
-                            break;
-                        case 1:
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-3, 0.5));
-                            break;
-                        case 2:
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                            break;
-                        case 3:
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.5 , 0.5));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5 , 0.5));
-                            break;
-                        case 4:
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(1.75, 0.5));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(0.75, 0.5));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.25, 0.5));
-                            this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-1.25, 0.5));
-                            break;
-                    }
-                    break;
-                case 5:
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 32, 16, 'block').setScale(screenHeight / 345).setOrigin(0.75, 0.5));
-                    this.misteryBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'misteryBlock').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                    this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                    break;
-            }
-
-        }
-        
-        // Structures will generate every 2/4 platform pieces
-        pieceStart += platformPiecesWidth * Phaser.Math.Between(2, 4);
-    }
-
-    // Stablish properties for every generated structure
-    let misteryBlocks = this.misteryBlocksGroup.getChildren();
-    for (let i = 0; i < misteryBlocks.length; i++) {
-        this.physics.add.existing(misteryBlocks[i]);
-        misteryBlocks[i].body.allowGravity = false;
-        misteryBlocks[i].body.immovable = true;
-        misteryBlocks[i].depth = 2
-        //misteryBlocks[i].anims.play('default', true)
-        this.physics.add.collider(player, misteryBlocks[i], revealHiddenBlock, null, this);
-    }
-    
-    // Apply player collision with blocks
-    let blocks = this.blocksGroup.getChildren();
-    this.physics.add.collider(player, blocks);
-    for (let i = 0; i < blocks.length; i++) {
-        this.physics.add.existing(blocks[i]);
-        blocks[i].body.allowGravity = false;
-        blocks[i].body.immovable = true;
-    }
 }
 
 function revealHiddenBlock(player, block) {
@@ -784,6 +782,128 @@ function consumeFireflower(player, fireFlower) {
     //player.body.setSize(16, 32).setOffset(1,0);
 }
 
+function throwFireball() {
+    this.fireball.play();
+    player.anims.play('fire-mario-throw');
+    playerFiring = true;
+    fireInCooldown = true;
+    setTimeout(() => {
+        playerFiring = false;
+    }, 100);
+
+    setTimeout(() => {
+        fireInCooldown = false;
+    }, 350);
+
+    let fireball = this.physics.add.sprite(player.getBounds().x, player.getBounds().y + (player.height / 1.25), 'fireball').setScale(screenHeight / 345);
+    fireball.allowGravity = true;
+    fireball.dead = false;
+    if (playerController.direction.positive) {
+        fireball.setVelocityX(velocityX * 1.3);
+        fireball.isVelocityPositive = true;
+        fireball.anims.play('fireball-right-down');
+    } else {
+        fireball.setVelocityX(-velocityX * 1.3);
+        fireball.isVelocityPositive = false;
+        fireball.anims.play('fireball-left-down');
+    }
+    updateFireballAnimation.call(this, fireball);
+    let blocks = this.blocksGroup.getChildren();
+    this.physics.add.collider(fireball, blocks, fireballBounce, null, this);
+    let misteryBlocks = this.misteryBlocksGroup.getChildren();
+    this.physics.add.collider(fireball, misteryBlocks, fireballBounce, null, this);
+    let platformPieces = this.platformGroup.getChildren();
+    this.physics.add.collider(fireball, platformPieces, fireballBounce, null, this);
+    let goombas = this.goombasGroup.getChildren();
+    this.physics.add.overlap(fireball, goombas, fireballCollides, null, this);
+
+    setTimeout(() => {
+        fireball.dead = true;
+        fireball.destroy();
+    }, 3000);
+}
+
+function fireballCollides(fireball, entitie) {
+    if (fireball.exploded)
+        return;
+    
+    fireball.exploded = true;
+    fireball.dead = true;
+    fireball.body.moves = false;
+
+    fireball.anims.play('fireball-explosion-1', true);
+    setTimeout(() => {
+        fireball.anims.play('fireball-explosion-2', true);
+        setTimeout(() => {
+            fireball.anims.play('fireball-explosion-3', true);
+            setTimeout(() => {
+                fireball.destroy();
+            }, 45);
+        }, 35);
+    }, 50);
+
+    entitie.anims.play('goomba-hurt', true).flipY = true;
+    entitie.dead = true;
+    this.goombasGroup.remove(entitie);
+    entitie.setVelocityX(0);
+    entitie.setVelocityY(-velocityY * 0.4);
+    setTimeout(() => {
+        this.tweens.add({
+            targets: entitie,
+            duration: 750,
+            y: screenHeight * 1.1
+        });
+    }, 400);
+
+    addToScore.call(this, 100, entitie);
+    setTimeout(() => {
+        entitie.destroy();
+    }, 1250);
+}
+
+function updateFireballAnimation(fireball) {
+
+    if (fireball.exploded || fireball.dead)
+        return;
+
+    if (fireball.body.velocity.y > 0) {
+        if (fireball.isVelocityPositive) {
+            fireball.anims.play('fireball-right-up');
+        } else {
+            fireball.anims.play('fireball-left-up');
+        }
+    } else {
+        if (fireball.isVelocityPositive) {
+            fireball.anims.play('fireball-right-down');
+        } else {
+            fireball.anims.play('fireball-left-down');
+        }
+    }
+
+    setTimeout(() => {
+        updateFireballAnimation.call(this, fireball);
+    }, 250);
+}
+
+function fireballBounce(fireball) {
+
+    if (fireball.body.blocked.down) 
+    fireball.setVelocityY(-levelGravity / 4);
+
+    if (fireball.body.blocked.up) 
+    fireball.setVelocityY(levelGravity / 4);
+
+    if (fireball.body.blocked.left) {
+        fireball.isVelocityPositive = false;
+        fireball.setVelocityX(velocityX * 1.3);
+    }
+
+    if (fireball.body.blocked.right) {
+        fireball.isVelocityPositive = true;
+        fireball.setVelocityX(velocityX * 1.3);
+    }
+}
+
 function addToScore(num, originObject) {
 
     for (i = 1; i <= num; i++) {
@@ -874,6 +994,10 @@ function createAnimations() {
         key: 'fire-mario-jump',
         frames: [{ key: 'mario-fire', frame: 5 }]
     });
+    this.anims.create({
+        key: 'fire-mario-throw',
+        frames: [{ key: 'mario-fire', frame: 6 }]
+    });
 
     //> Goomba animations
     this.anims.create({
@@ -893,6 +1017,38 @@ function createAnimations() {
         frames: this.anims.generateFrameNumbers('coin', { start: 0, end: 3 }),
         frameRate: 10,
         repeat: -1
+    });
+
+    //> Fireball
+    this.anims.create({
+        key: 'fireball-left-down',
+        frames: [{ key: 'fireball', frame: 0 }]
+    });
+    this.anims.create({
+        key: 'fireball-left-up',
+        frames: [{ key: 'fireball', frame: 1 }]
+    });
+    this.anims.create({
+        key: 'fireball-right-down',
+        frames: [{ key: 'fireball', frame: 2 }]
+    });
+    this.anims.create({
+        key: 'fireball-right-up',
+        frames: [{ key: 'fireball', frame: 3 }]
+    });
+
+    //> Fireball explosion
+    this.anims.create({
+        key: 'fireball-explosion-1',
+        frames: [{ key: 'fireball-explosion', frame: 0 }]
+    });
+    this.anims.create({
+        key: 'fireball-explosion-2',
+        frames: [{ key: 'fireball-explosion', frame: 1 }]
+    });
+    this.anims.create({
+        key: 'fireball-explosion-3',
+        frames: [{ key: 'fireball-explosion', frame: 2 }]
     });
 }
 
@@ -918,9 +1074,9 @@ function createGoombas() {
         goomba.smoothed = true;
         goomba.depth = 2;
         if (Phaser.Math.Between(0, 10) <= 4) {
-            goomba.setVelocityX(110)
+            goomba.setVelocityX(100)
         } else {
-            goomba.setVelocityX(-110)
+            goomba.setVelocityX(-100)
         }
         goomba.setMaxVelocity(250, levelGravity)
         this.goombasGroup.add(goomba);
@@ -932,6 +1088,9 @@ function createGoombas() {
         this.physics.add.collider(goomba, misteryBlocks);
         let goombas = this.goombasGroup.getChildren();
         this.physics.add.collider(goomba, goombas);
+        this.physics.add.overlap(goomba, this.finalFlagMast, function() {
+            goomba.setVelocityX(-goomba.body.velocity.x)
+        }), null, this;
         this.physics.add.overlap(player, goomba, checkGoombaCollision, null, this);
     }
 
@@ -941,7 +1100,13 @@ function createGoombas() {
 
 function checkGoombaCollision(player, goomba) {
 
+    if (goomba.dead)
+        return;
+    
     let goombaBeingStomped = player.body.touching.down && goomba.body.touching.up;
+
+    if (flagRaised)
+        return;
 
     if (playerInvulnerable) {
         if (!goombaBeingStomped) {
@@ -1066,14 +1231,18 @@ function update(delta) {
 
     if (cursors.left.isDown || controlKeys.A.isDown || this.joyStick.left) {
         smoothedControls.moveLeft(delta);
-        if (playerState == 0)
-        player.anims.play('run', true).flipX = true;
+        if (!playerFiring) {
+            if (playerState == 0)
+            player.anims.play('run', true).flipX = true;
+    
+            if (playerState == 1)
+            player.anims.play('grown-mario-run', true).flipX = true;
+    
+            if (playerState == 2)
+            player.anims.play('fire-mario-run', true).flipX = true;
+        }
 
-        if (playerState == 1)
-        player.anims.play('grown-mario-run', true).flipX = true;
-
-        if (playerState == 2)
-        player.anims.play('fire-mario-run', true).flipX = true;
+        playerController.direction.positive = false;
         
         // Lerp the velocity towards the max run using the smoothed controls.
         // This simulates a player controlled acceleration.
@@ -1084,14 +1253,18 @@ function update(delta) {
         player.setVelocityX(newVelocityX);
     } else if (cursors.right.isDown  || controlKeys.D.isDown|| this.joyStick.right) {
         smoothedControls.moveRight(delta);
-        if (playerState == 0)
-        player.anims.play('run', true).flipX = false;
+        if (!playerFiring) {
+            if (playerState == 0)
+            player.anims.play('run', true).flipX = false;
+    
+            if (playerState == 1)
+            player.anims.play('grown-mario-run', true).flipX = false;
+    
+            if (playerState == 2)
+            player.anims.play('fire-mario-run', true).flipX = false;
+        }
 
-        if (playerState == 1)
-        player.anims.play('grown-mario-run', true).flipX = false;
-
-        if (playerState == 2)
-        player.anims.play('fire-mario-run', true).flipX = false;
+        playerController.direction.positive = true;
 
         // Lerp the velocity towards the max run using the smoothed controls.
         // This simulates a player controlled acceleration.
@@ -1105,7 +1278,7 @@ function update(delta) {
             smoothedControls.reset();
         if (player.body.touching.down)
             player.setVelocityX(0);
-        if (!cursors.up.isDown) {
+        if (!cursors.up.isDown && !playerFiring) {
             if (playerState == 0)
             player.anims.play('idle', true);
     
@@ -1117,39 +1290,47 @@ function update(delta) {
         }
     }
 
-    if (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) {
+    if (!playerFiring) {
+        if (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) {
+            if (playerState == 1)
+            player.anims.play('grown-mario-crouch', true);
 
-        if (playerState == 1)
-        player.anims.play('grown-mario-crouch', true);
+            if (playerState == 2)
+            player.anims.play('fire-mario-crouch', true);
 
-        if (playerState == 2)
-        player.anims.play('fire-mario-crouch', true);
+            if (player.body.touching.down) {
+                player.setVelocityX(0);
+            } 
 
-        if (player.body.touching.down) {
-            player.setVelocityX(0);
-        } 
+            player.body.setSize(16, 22).setOffset(0.5, 10.5);
 
-        player.body.setSize(16, 22).setOffset(0.5, 10.5);
+            return;
+        } else {
+            if (playerState > 0)
+                player.body.setSize(16, 32).setOffset(1,0);
 
-        return;
-    } else {
-        if (playerState > 0)
-            player.body.setSize(16, 32).setOffset(1,0);
-
-        if (playerState == 0)
-            player.body.setSize(16, 16).setOffset(0.3, 0.5);
+            if (playerState == 0)
+                player.body.setSize(16, 16).setOffset(0.3, 0.5);
+        }
     }
     
+    if (player.body.touching.down && playerState == 2 && controlKeys.Q.isDown && !fireInCooldown) {
+        throwFireball.call(this);
+        return;
+    }
+
     // Apply jump animation
     if (!player.body.touching.down) {
-        if (playerState == 0)
-        player.anims.play('jump', true);
-
-        if (playerState == 1)
-        player.anims.play('grown-mario-jump', true);
-
-        if (playerState == 2)
-        player.anims.play('fire-mario-jump', true);
+        if (!playerFiring) {
+            if (playerState == 0)
+            player.anims.play('jump', true);
+    
+            if (playerState == 1)
+            player.anims.play('grown-mario-jump', true);
+    
+            if (playerState == 2)
+            player.anims.play('fire-mario-jump', true);
+        }
     }
 }
 
