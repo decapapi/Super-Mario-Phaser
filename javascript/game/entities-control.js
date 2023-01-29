@@ -6,9 +6,8 @@ function createGoombas() {
 
     for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 960), Math.trunc(worldWidth / 760)); i++) {
         let x = generateRandomCoordinate(true);
-        let goomba = this.physics.add.sprite(x, screenHeight - platformHeight, 'goomba').setOrigin(0.5, 1).setBounce(1, 0);
-        goomba.anims.play('goomba-walk', true)
-        goomba.scale = screenHeight / 376;
+        let goomba = this.physics.add.sprite(x, screenHeight - platformHeight, 'goomba').setOrigin(0.5, 1).setBounce(1, 0).setScale(screenHeight / 376);
+        goomba.anims.play('goomba-walk', true);
         goomba.smoothed = true;
         goomba.depth = 2;
         if (Phaser.Math.Between(0, 10) <= 4) {
@@ -33,7 +32,7 @@ function createGoombas() {
     // Create collision with fall protections to stop goombas from falling off the map
     this.physics.add.collider(this.goombasGroup.getChildren(), this.immovableBlocksGroup.getChildren());
     this.physics.add.collider(this.goombasGroup.getChildren(), this.fallProtectionGroup.getChildren());
-    this.physics.add.collider(this.goombasGroup.getChildren(), this.finalTrigger);
+    this.physics.add.collider(this.goombasGroup.getChildren(), this.finalTrigger);    
 
     setInterval(clearGoombas.call(this), 250);
 }
@@ -42,7 +41,7 @@ function checkGoombaCollision(player, goomba) {
 
     if (goomba.dead)
         return;
-
+    
     let goombaBeingStomped = player.body.touching.down && goomba.body.touching.up;
 
     if (flagRaised)
@@ -53,7 +52,7 @@ function checkGoombaCollision(player, goomba) {
             return;
         }
     }
-
+    
     if (goombaBeingStomped) {
         goomba.anims.play('goomba-hurt', true);
         goomba.body.enable = false;
@@ -73,9 +72,9 @@ function checkGoombaCollision(player, goomba) {
         }, 500);
         return;
     }
-
+    
     decreasePlayerState.call(this);
-
+        
     return;
 }
 

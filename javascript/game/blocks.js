@@ -112,26 +112,31 @@ function destroyBlock(player, block) {
 function drawDestroyedBlockParticles(block) {
     let playerBounds = player.getBounds();
     let blockBounds = block.getBounds();
-
-    let particle1 = this.physics.add.sprite(playerBounds.left, blockBounds.y, 'brick-debris').anims.play('brick-debris-default', true);
-    let particle2 = this.physics.add.sprite(playerBounds.right, blockBounds.y, 'brick-debris').anims.play('brick-debris-default', true);
-    let particle3 = this.physics.add.sprite(playerBounds.left, blockBounds.y + block.height * 2.35, 'brick-debris').anims.play('brick-debris-default', true);
-    let particle4 = this.physics.add.sprite(playerBounds.right, blockBounds.y + block.height * 2.35, 'brick-debris').anims.play('brick-debris-default', true);
-
-    particle1.setVelocityY(-(screenHeight / 3.45)).scale = screenHeight / 517;
-    particle2.setVelocityY(-(screenHeight / 3.45)).scale = screenHeight / 517;
-    particle3.setVelocityY(-(screenHeight / 2.6)).scale = screenHeight / 517;
-    particle4.setVelocityY(-(screenHeight / 2.6)).scale = screenHeight / 517;
-
-    particle1.setVelocityX(-(screenWidth / 25.6)).depth = 4;
-    particle2.setVelocityX(screenWidth / 25.6).depth = 4;
-    particle3.setVelocityX(-(screenWidth / 25.6)).depth = 4;
-    particle4.setVelocityX(screenWidth / 25.6).depth = 4;
-
+    
+    let particles = [
+        [playerBounds.left, blockBounds.y],
+        [playerBounds.right, blockBounds.y],
+        [playerBounds.left, blockBounds.y + block.height * 2.35],
+        [playerBounds.right, blockBounds.y + block.height * 2.35]
+    ];
+    
+    for (let particleCoords of particles) {
+        let particle = this.physics.add.sprite(particleCoords[0], particleCoords[1], 'brick-debris').anims.play('brick-debris-default', true);
+    
+        if (particleCoords[1] === blockBounds.y) {
+            particle.setVelocityY(-(screenHeight / 3.45));
+        } else {
+            particle.setVelocityY(-(screenHeight / 2.6));
+        }
+    
+        particle.setVelocityX(particleCoords[0] === playerBounds.left ? -(screenWidth / 25.6) : (screenWidth / 25.6));
+        particle.setScale(screenHeight / 517);
+        particle.depth = 4;
+    }
+    
     setTimeout(() => {
-        particle1.destroy();
-        particle2.destroy();
-        particle3.destroy();
-        particle4.destroy();
+        for (let particleCoords of particles) {
+            this.physics.world.disableBody(particleCoords[0], particleCoords[1]);
+        }
     }, 3000);
 }

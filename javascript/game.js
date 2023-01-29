@@ -30,7 +30,7 @@ var config = {
         create: create,
         update: update
     },
-    version: '0.7.0'
+    version: '0.7.1'
 };
 
 const worldWidth = screenWidth * 11;
@@ -342,7 +342,6 @@ function create() {
     createGoombas.call(this);
     createControls.call(this);
     applySettings.call(this);
-    //drawSettingsMenu.call(this);
 
     loadingGif.style.visibility = "hidden";
     
@@ -350,9 +349,6 @@ function create() {
 }
 
 function createControls() {
-    
-    // Create JoyStick
-    // https://codepen.io/rexrainbow/pen/oyqvQY
 
     this.joyStick = this.plugins.get('rexvirtualjoystickplugin').add(this, {
         x: screenWidth * 0.118,
@@ -414,9 +410,9 @@ function drawWorld() {
             let x = generateRandomCoordinate(false, false);
             let y = Phaser.Math.Between(screenHeight / 80, screenHeight / 2.2);
             if (Phaser.Math.Between(0, 10) < 5) {
-                this.add.image(x, y, 'cloud1').setOrigin(0).scale = screenHeight / 1725;
+                this.add.image(x, y, 'cloud1').setOrigin(0).setScale(screenHeight / 1725);
             } else {
-                this.add.image(x, y, 'cloud2').setOrigin(0).scale = screenHeight / 1725;
+                this.add.image(x, y, 'cloud2').setOrigin(0).setScale(screenHeight / 1725);
             }
         }
 
@@ -425,9 +421,9 @@ function drawWorld() {
             let x = generateRandomCoordinate();
 
             if (Phaser.Math.Between(0, 10) < 5) {
-                this.add.image(x, propsY, 'mountain1').setOrigin(0, 1).scale = screenHeight / 517;
+                this.add.image(x, propsY, 'mountain1').setOrigin(0, 1).setScale(screenHeight / 517);
             } else {
-                this.add.image(x, propsY, 'mountain2').setOrigin(0, 1).scale = screenHeight / 517;
+                this.add.image(x, propsY, 'mountain2').setOrigin(0, 1).setScale(screenHeight / 517);
             }
         }
         
@@ -436,9 +432,9 @@ function drawWorld() {
             let x = generateRandomCoordinate();
 
             if (Phaser.Math.Between(0, 10) < 5) {
-                this.add.image(x, propsY, 'bush1').setOrigin(0, 1).scale = screenHeight / 609;
+                this.add.image(x, propsY, 'bush1').setOrigin(0, 1).setScale(screenHeight / 609);
             } else {
-                this.add.image(x, propsY, 'bush2').setOrigin(0, 1).scale = screenHeight / 609;
+                this.add.image(x, propsY, 'bush2').setOrigin(0, 1).setScale(screenHeight / 609);
             }
         }
 
@@ -446,13 +442,12 @@ function drawWorld() {
         for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 4000), Math.trunc(worldWidth / 2000)); i++) {
             let x = generateRandomCoordinate();
 
-            this.add.tileSprite(x, propsY, Phaser.Math.Between(100, 250), 35, 'fence').setOrigin(0, 1).scale = screenHeight / 863;
+            this.add.tileSprite(x, propsY, Phaser.Math.Between(100, 250), 35, 'fence').setOrigin(0, 1).setScale(screenHeight / 863);
         }
     }
 
     //> Final flag
-    this.finalFlagMast = this.add.tileSprite(worldWidth - (worldWidth / 30), propsY, 16, 167, 'flag-mast').setOrigin(0, 1);
-    this.finalFlagMast.scale = screenHeight / 400;
+    this.finalFlagMast = this.add.tileSprite(worldWidth - (worldWidth / 30), propsY, 16, 167, 'flag-mast').setOrigin(0, 1).setScale(screenHeight / 400);
     this.physics.add.existing(this.finalFlagMast);
     this.finalFlagMast.immovable = true;
     this.finalFlagMast.allowGravity = false;
@@ -462,10 +457,10 @@ function drawWorld() {
 
     //> Flag
     this.finalFlag = this.add.image(worldWidth - (worldWidth / 30), propsY * 0.93, 'final-flag').setOrigin(0.5, 1);
-    this.finalFlag.scale = screenHeight / 400;
+    this.finalFlag.setScale(screenHeight / 400);
 
     //> Castle
-    this.add.image(worldWidth - (worldWidth / 75), propsY, 'castle').setOrigin(0.5, 1).scale = screenHeight / 300;
+    this.add.image(worldWidth - (worldWidth / 75), propsY, 'castle').setOrigin(0.5, 1).setScale(screenHeight / 300);
 }
 
 function generateLevel() {
@@ -497,7 +492,7 @@ function generateLevel() {
         let number = Phaser.Math.Between(0, 100);
 
         // Check if its not a hole, this means is not that 20%, is not in the spawn safe area and is not close to the end castle.
-        if (pieceStart >= (worldWidth - platformPiecesWidth * 4) || number <= 0 || pieceStart <= screenWidth * 2 || lastWasHole > 0 || pieceStart >= worldWidth - screenWidth * 2 || lastWasStructure > 0) {
+        if (pieceStart >= (lastWasHole > 0 || lastWasStructure > 0 || worldWidth - platformPiecesWidth * 4) || number <= 0 || pieceStart <= screenWidth * 2 || pieceStart >= worldWidth - screenWidth * 2) {
             lastWasHole--;
 
             //> Create platform
@@ -514,191 +509,7 @@ function generateLevel() {
             //> Creating world structures
 
             if (!(pieceStart >= (worldWidth - screenWidth * (isLevelOverworld ? 1 : 1.5))) && pieceStart > (screenWidth + platformPiecesWidth * 2) && lastWasHole < 1 && lastWasStructure < 1) {
-                if (isLevelOverworld) {
-
-                let random = Phaser.Math.Between(0, 5);
-                //> Generate random structure an add it to their blocksGroup
-
-                switch (random) {
-                    case 0:
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9),'mistery-block').setScale(screenHeight / 345));
-
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3.6, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(5.6, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(4.6, 0.5));
-    
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2.6, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-4.6, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-3.6, 0.5));
-                        lastWasStructure = Phaser.Math.Between(1, 3);
-                        break;
-                    case 1:
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2.8, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(4.8, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(3.8, 0.5));
-                        
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.9, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-3.9, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-2.9, 0.5));
-    
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345));
-                        lastWasStructure = Phaser.Math.Between(1, 3);
-                        break;
-                    case 2:
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                        lastWasStructure = Phaser.Math.Between(1, 3);
-                        break;
-                    case 3:
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(0, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(0, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(1, 0.5));
-                        lastWasStructure = Phaser.Math.Between(1, 3);
-                        break;
-                    case 4:
-                        let random = Phaser.Math.Between(0, 4)
-                        switch (random) {
-                            case 0:
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-3, 0.5));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(4, 0.5));
-                                break;
-                            case 1:
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-3, 0.5));
-                                break;
-                            case 2:
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345));
-                                break;
-                            case 3:
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(1.5 , 0.5));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-0.5 , 0.5));
-                                break;
-                            case 4:
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(1.75, 0.5));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(0.75, 0.5));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-0.25, 0.5));
-                                this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-1.25, 0.5));
-                                break;
-                        }
-                        lastWasStructure = Phaser.Math.Between(1, 2);
-                        break;
-                    case 5:
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(0.5, 0.5));
-                        this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                        this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                        lastWasStructure = Phaser.Math.Between(1, 2);
-                        break;
-                    }
-                } else {
-
-                    //> Generate random structure an add it to their blocksGroup
-                    let random = Phaser.Math.Between(0, 5);
-    
-                    switch (random) {
-                        case 0:
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                            break;
-                        case 1:
-                            this.immovableBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - platformHeight, 16, 16, 'immovableBlock').setScale(screenHeight / 345).setOrigin(6.5, 1));
-                            this.immovableBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - platformHeight, 16, 32, 'immovableBlock').setScale(screenHeight / 345).setOrigin(4.5, 1));
-                            this.immovableBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - platformHeight, 16, 46, 'immovableBlock').setScale(screenHeight / 345).setOrigin(2.5, 1));
-                            this.immovableBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - platformHeight, 16, 64, 'immovableBlock').setScale(screenHeight / 345).setOrigin(0.5, 1));
-                            this.immovableBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - platformHeight, 16, 46, 'immovableBlock').setScale(screenHeight / 345).setOrigin(-1.5, 1));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-3.5, 0.5));
-                            this.immovableBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - platformHeight, '16', '32', 'immovableBlock').setScale(screenHeight / 345).setOrigin(-5.5, 1));
-                            break;
-                        case 2:
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(4.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(3.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.135), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.37), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(2.5, 0.5));
-                            
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.37), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(1.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.37), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(0.5, 0.5));
-
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-2.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.135), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-2.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.37), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-2.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-1.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 1.9), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.135), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-                            this.constructionBlocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight * 2.37), 16, 16, 'block2').setScale(screenHeight / 345).setOrigin(-0.5, 0.5));
-
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(5.25, 1.7));
-                            
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 2.4), 'ground-coin').setScale(screenHeight / 345).setOrigin(3.75, 1.65));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 2.4), 'ground-coin').setScale(screenHeight / 345).setOrigin(2.2, 1.65));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 2.4), 'ground-coin').setScale(screenHeight / 345).setOrigin(0.5, 1.65));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 2.4), 'ground-coin').setScale(screenHeight / 345).setOrigin(-1.15, 1.65));
-
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-2.7, 1.7));
-                            break;
-                        case 3:
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(3, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 2.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(2, 0.5));
-
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(3, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(2, 0.5));
-
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-1, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-2, 0.5));
-                            this.misteryBlocksGroup.add(this.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'mistery-block').setScale(screenHeight / 345).setOrigin(-3, 0.5));
-                            break
-                        case 4:
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(2.9, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(1.3, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-0.3, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-1.9, 1.7));
-
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(0, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1, 0.5));
-                            break;
-                        case 5:
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(6.1, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(4.5, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(2.9, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(1.3, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-0.3, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-1.9, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-3.5, 1.7));
-                            this.groundCoinsGroup.add(this.physics.add.sprite(pieceStart, screenHeight - (platformHeight * 1.9), 'ground-coin').setScale(screenHeight / 345).setOrigin(-5, 1.7));
-
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(4, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(3, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(2, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(1, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(0, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-1, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-2, 0.5));
-                            this.blocksGroup.add(this.add.tileSprite(pieceStart, screenHeight - (platformHeight* 1.9), 16, 16, 'block').setScale(screenHeight / 345).setOrigin(-3, 0.5));
-                            break;
-                    }
-                    lastWasStructure = 1;
-                }
+                lastWasStructure = generateStructure.call(this, pieceStart);
             }
             else {
                 lastWasStructure--;
@@ -922,27 +733,27 @@ function drawStartScreen() {
     { fontFamily: 'pixel_nums', fontSize: (screenWidth / 115), align: 'left'}).setLineSpacing(screenHeight / 34.5);
     */
    
-    this.add.image(screenWidth / 50, screenHeight / 3, 'cloud1').scale = screenHeight / 1725;
-    this.add.image(screenWidth / 1.25, screenHeight / 2, 'cloud1').scale = screenHeight / 1725;
-    this.add.image(screenWidth / 1.05, screenHeight / 6.5, 'cloud2').scale = screenHeight / 1725;
-    this.add.image(screenWidth / 3, screenHeight / 3.5, 'cloud2').scale = screenHeight / 1725;
-    this.add.image(screenWidth / 2.65, screenHeight / 2.8, 'cloud2').scale = screenHeight / 1725;
+    this.add.image(screenWidth / 50, screenHeight / 3, 'cloud1').setScale(screenHeight / 1725);
+    this.add.image(screenWidth / 1.25, screenHeight / 2, 'cloud1').setScale(screenHeight / 1725);
+    this.add.image(screenWidth / 1.05, screenHeight / 6.5, 'cloud2').setScale(screenHeight / 1725);
+    this.add.image(screenWidth / 3, screenHeight / 3.5, 'cloud2').setScale(screenHeight / 1725);
+    this.add.image(screenWidth / 2.65, screenHeight / 2.8, 'cloud2').setScale(screenHeight / 1725);
 
-    this.add.image(screenWidth / 50, screenHeight / 3, 'cloud1').scale = screenHeight / 1725;
+    this.add.image(screenWidth / 50, screenHeight / 3, 'cloud1').setScale(screenHeight / 1725);
 
-    this.add.image(screenWidth / 25, screenHeight / 10, 'sign').setOrigin(0).scale = screenHeight / 350;
+    this.add.image(screenWidth / 25, screenHeight / 10, 'sign').setOrigin(0).setScale(screenHeight / 350);
 
     let propsY = screenHeight - platformHeight;
 
-    this.add.image(screenWidth / 50, propsY, 'mountain2').setOrigin(0, 1).scale = screenHeight / 517;
-    this.add.image(screenWidth / 300, propsY, 'mountain1').setOrigin(0, 1).scale = screenHeight / 517;
+    this.add.image(screenWidth / 50, propsY, 'mountain2').setOrigin(0, 1).setScale(screenHeight / 517);
+    this.add.image(screenWidth / 300, propsY, 'mountain1').setOrigin(0, 1).setScale(screenHeight / 517);
 
-    this.add.image(screenWidth / 4, propsY, 'bush1').setOrigin(0, 1).scale = screenHeight / 609;
-    this.add.image(screenWidth / 1.55, propsY, 'bush2').setOrigin(0, 1).scale = screenHeight / 609;
-    this.add.image(screenWidth / 1.5, propsY, 'bush2').setOrigin(0, 1).scale = screenHeight / 609;
+    this.add.image(screenWidth / 4, propsY, 'bush1').setOrigin(0, 1).setScale(screenHeight / 609);
+    this.add.image(screenWidth / 1.55, propsY, 'bush2').setOrigin(0, 1).setScale(screenHeight / 609);
+    this.add.image(screenWidth / 1.5, propsY, 'bush2').setOrigin(0, 1).setScale(screenHeight / 609);
 
 
-    this.add.tileSprite(screenWidth / 15, propsY, 350, 35, 'fence').setOrigin(0, 1).scale = screenHeight / 863;
+    this.add.tileSprite(screenWidth / 15, propsY, 350, 35, 'fence').setOrigin(0, 1).setScale(screenHeight / 863);
 
     this.customBlock = this.add.sprite(screenCenterX, screenHeight - (platformHeight * 1.9),'custom-block').setScale(screenHeight / 345);
     this.customBlock.anims.play('custom-block-default')
@@ -951,12 +762,11 @@ function drawStartScreen() {
     this.customBlock.body.allowGravity = false;
     this.customBlock.body.immovable = true;
 
-    this.add.image(screenCenterX, screenHeight - (platformHeight * 1.9), 'gear').scale = screenHeight / 13000;
+    this.add.image(screenCenterX, screenHeight - (platformHeight * 1.9), 'gear').setScale(screenHeight / 13000);
 
-    this.add.image(screenCenterX * 1.12, screenHeight - (platformHeight * 1.5), 'settings-bubble').scale = screenHeight / 620;
+    this.add.image(screenCenterX * 1.12, screenHeight - (platformHeight * 1.5), 'settings-bubble').setScale(screenHeight / 620);
 
-    this.npc = this.add.sprite(screenCenterX * 1.07, screenHeight - platformHeight, 'npc').setOrigin(0.5, 1);
-    this.npc.scale = screenHeight / 365
+    this.npc = this.add.sprite(screenCenterX * 1.07, screenHeight - platformHeight, 'npc').setOrigin(0.5, 1).setScale(screenHeight / 365);
     this.npc.anims.play('npc-default', true);
 }
 
@@ -1003,24 +813,15 @@ function consumeMushroom(player, mushroom) {
     playerBlocked = true;
     this.anims.pauseAll();
     this.physics.pause();
-    player.setTint(0xfefefe).anims.play('idle');
-    setTimeout(()=> {
-        player.anims.play('grown-mario-idle');
-        setTimeout(()=> {
-            player.anims.play('idle');
-            setTimeout(()=> {
-                player.anims.play('grown-mario-idle');
-                setTimeout(()=> {
-                    player.anims.play('idle');
-                    setTimeout(()=> {
-                        player.anims.play('grown-mario-idle');
-                        setTimeout(()=> {
-                            player.clearTint();
-                        }, 100);
-                    }, 100);
-                }, 100);
-            }, 100);
-        }, 100);
+    player.setTint(0xfefefe).anims.play('grown-mario-idle');
+    let i = 0;
+    let interval = setInterval(() => {
+        i++;
+        player.anims.play(i % 2 === 0 ? 'grown-mario-idle' : 'idle');
+        if (i > 5) {
+            clearInterval(interval);
+            player.clearTint();
+        }
     }, 100);
 
     setTimeout(() => { 
@@ -1046,24 +847,16 @@ function consumeFireflower(player, fireFlower) {
     playerBlocked = true;
     this.anims.pauseAll();
     this.physics.pause();
-    player.setTint(0xfefefe).anims.play(anim);
-    setTimeout(()=> {
-        player.anims.play('fire-mario-idle');
-        setTimeout(()=> {
-            player.anims.play(anim);
-            setTimeout(()=> {
-                player.anims.play('fire-mario-idle');
-                setTimeout(()=> {
-                    player.anims.play(anim);
-                    setTimeout(()=> {
-                        player.anims.play('fire-mario-idle');
-                        setTimeout(()=> {
-                            player.clearTint();
-                        }, 100);
-                    }, 100);
-                }, 100);
-            }, 100);
-        }, 100);
+
+    player.setTint(0xfefefe).anims.play('fire-mario-idle');
+    let i = 0;
+    let interval = setInterval(() => {
+        i++;
+        player.anims.play(i % 2 === 0 ? 'fire-mario-idle' : anim);
+        if (i > 5) {
+            clearInterval(interval);
+            player.clearTint();
+        }
     }, 100);
 
     setTimeout(() => { 
@@ -1083,163 +876,10 @@ function collectCoin(player, coin) {
 }
 
 function update(delta) {
+
     if (gameOver || gameWinned) return;
 
-    // Win animation
-    if (playerBlocked && flagRaised) {
-        player.setVelocityX(225);
-        if (playerState == 0)
-        player.anims.play('run', true).flipX = false;
-        if (playerState == 1)
-        player.anims.play('grown-mario-run', true).flipX = false;
-        if (playerState == 2)
-        player.anims.play('fire-mario-run', true);
-
-        if(player.x >= worldWidth - (worldWidth / 75)) {
-            this.tweens.add({
-                targets: player,
-                duration: 75,
-                alpha: 0
-            });
-        }
-        setTimeout(() => {
-            gameWinned = true;
-            player.destroy();
-            winScreen.call(this);
-        }, 5000);
-        return;
-    }
-
-    // Check if player has fallen
-    if (player.y > screenHeight - 10 || timeLeft <= 0) {
-        gameOver = true;
-        gameOverFunc.call(this);
-        return;
-    }
-   
-    updateScore.call(this);
-
-    if (playerBlocked)
-        return;
-
-    // Player controls
-    // https://github.com/photonstorm/phaser3-examples/blob/master/public/src/tilemap/collision/matter%20destroy%20tile%20bodies.js#L323
-    // https://codepen.io/rexrainbow/pen/oyqvQY
-
-    // > Vertical movement
-    if ((cursors.up.isDown || controlKeys.SPACE.isDown || this.joyStick.up) && player.body.touching.down) {
-        this.jumpSound.play();
-        (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) ? player.setVelocityY(-velocityY / 1.25) : player.setVelocityY(-velocityY);
-    }
-
-    // > Horizontal movement and animations
-    var oldVelocityX;
-    var targetVelocityX;
-    var newVelocityX;
-
-    if (cursors.left.isDown || controlKeys.A.isDown || this.joyStick.left) {
-        smoothedControls.moveLeft(delta);
-        if (!playerFiring) {
-            if (playerState == 0)
-            player.anims.play('run', true).flipX = true;
-    
-            if (playerState == 1)
-            player.anims.play('grown-mario-run', true).flipX = true;
-    
-            if (playerState == 2)
-            player.anims.play('fire-mario-run', true).flipX = true;
-        }
-
-        playerController.direction.positive = false;
-        
-        // Lerp the velocity towards the max run using the smoothed controls.
-        // This simulates a player controlled acceleration.
-        oldVelocityX = player.body.velocity.x;
-        targetVelocityX = -playerController.speed.run;
-        newVelocityX = Phaser.Math.Linear(oldVelocityX, targetVelocityX, -smoothedControls.value);
-
-        player.setVelocityX(newVelocityX);
-    } else if (cursors.right.isDown  || controlKeys.D.isDown || this.joyStick.right) {
-        smoothedControls.moveRight(delta);
-        if (!playerFiring) {
-            if (playerState == 0)
-            player.anims.play('run', true).flipX = false;
-    
-            if (playerState == 1)
-            player.anims.play('grown-mario-run', true).flipX = false;
-    
-            if (playerState == 2)
-            player.anims.play('fire-mario-run', true).flipX = false;
-        }
-
-        playerController.direction.positive = true;
-
-        // Lerp the velocity towards the max run using the smoothed controls.
-        // This simulates a player controlled acceleration.
-        oldVelocityX = player.body.velocity.x;
-        targetVelocityX = playerController.speed.run;
-        newVelocityX = Phaser.Math.Linear(oldVelocityX, targetVelocityX, smoothedControls.value);
-
-        player.setVelocityX(newVelocityX);    
-    } else {
-        if (player.body.velocity.x != 0)
-            smoothedControls.reset();
-        if (player.body.touching.down)
-            player.setVelocityX(0);
-        if (!cursors.up.isDown && !playerFiring) {
-            if (playerState == 0)
-            player.anims.play('idle', true);
-    
-            if (playerState == 1)
-            player.anims.play('grown-mario-idle', true);
-
-            if (playerState == 2)
-            player.anims.play('fire-mario-idle', true);
-        }
-    }
-
-    if (!playerFiring) {
-        if (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) {
-            if (playerState == 1)
-            player.anims.play('grown-mario-crouch', true);
-
-            if (playerState == 2)
-            player.anims.play('fire-mario-crouch', true);
-
-            if (player.body.touching.down) {
-                player.setVelocityX(0);
-            } 
-
-            player.body.setSize(14, 22).setOffset(2, 10);
-
-            return;
-        } else {
-            if (playerState > 0)
-                player.body.setSize(14, 32).setOffset(2,0);
-
-            if (playerState == 0)
-                player.body.setSize(14, 16).setOffset(1.3, 0.5);
-        }
-    }
-
-    if (player.body.touching.down && playerState == 2 && controlKeys.Q.isDown && !fireInCooldown) {
-        throwFireball.call(this);
-        return;
-    }
-
-    // Apply jump animation
-    if (!player.body.touching.down) {
-        if (!playerFiring) {
-            if (playerState == 0)
-            player.anims.play('jump', true);
-    
-            if (playerState == 1)
-            player.anims.play('grown-mario-jump', true);
-    
-            if (playerState == 2)
-            player.anims.play('fire-mario-jump', true);
-        }
-    }
+    updatePlayer.call(this, delta);
 
     if (player.body.velocity.x > 0 && levelStarted && !reachedLevelEnd && !this.cameras.main.isFollowing
         && player.x >= screenWidth * 1.5 && player.x >= (this.cameras.main.worldView.x + this.cameras.main.width / 2)) {
@@ -1248,7 +888,7 @@ function update(delta) {
     }
 
     if (player.body.velocity.x < 0 && furthestPlayerPos < player.x && levelStarted && !reachedLevelEnd && this.cameras.main.isFollowing) {
-        furthestPlayerPos = player.x
+        furthestPlayerPos = player.x;
         this.physics.world.setBounds(this.cameras.main.worldView.x, 0, worldWidth, screenHeight);
         this.cameras.main.setBounds(this.cameras.main.worldView.x, 0, worldWidth, screenHeight);
         this.cameras.main.stopFollow();

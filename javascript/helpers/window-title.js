@@ -34,4 +34,3 @@ function negativeTitle() {
         interval = setInterval(positiveTitle, 400);
     }
 }
-

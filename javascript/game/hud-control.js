@@ -14,6 +14,8 @@ function createHUD() {
     if (localHighScore !== null) {
         this.highScoreText.setText('HIGH SCORE\n' + localHighScore.toString().padStart(6, '0'))
     }
+    
+    updateScore.call(this);
 }
 
 function updateScore() {
@@ -50,7 +52,8 @@ function addToScore(num, originObject) {
 
     for (i = 1; i <= num; i++) {
         setTimeout(() => {
-            score += 1;
+            score++;
+            updateScore.call(this);
         }, i);
     }
 

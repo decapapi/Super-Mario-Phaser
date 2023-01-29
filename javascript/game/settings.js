@@ -51,7 +51,7 @@ function drawSettingsMenu() {
     settingsText.depth = 5;
     this.settingsMenuObjects.add(settingsText);
 
-    let musicCheckbox = this.add.rexCheckbox(screenWidth / 10, screenHeight / 2.6, screenWidth / 40, screenWidth / 40, {
+    let musicCheckbox = this.add.rexCheckbox(screenWidth / 10, screenHeight / 2.9, screenWidth / 40, screenWidth / 40, {
         color: 0x323232,
         checked: localStorage.getItem('music-enabled') == 'true' || localStorage.getItem('music-enabled') == 'false' ? localStorage.getItem('music-enabled') == 'true' : true,
         animationDuration: 150
@@ -63,11 +63,11 @@ function drawSettingsMenu() {
         localStorage.setItem('music-enabled', musicCheckbox.checked)
     });
 
-    let musicCheckboxText = this.add.text(screenWidth / 8, screenHeight / 2.6, 'Music', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}).setOrigin(0.5, 0).setInteractive().on('pointerdown', () => musicCheckbox.toggleChecked());;
+    let musicCheckboxText = this.add.text(screenWidth / 8, screenHeight / 2.9, 'Music', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}).setOrigin(0.5, 0).setInteractive().on('pointerdown', () => musicCheckbox.toggleChecked());;
     musicCheckboxText.setOrigin(0, 0.4).depth = 5;
     this.settingsMenuObjects.add(musicCheckboxText);
 
-    let effectsCheckbox = this.add.rexCheckbox(screenWidth / 10, screenHeight / 2.1, screenWidth / 40, screenWidth / 40, {
+    let effectsCheckbox = this.add.rexCheckbox(screenWidth / 10, screenHeight / 2.3, screenWidth / 40, screenWidth / 40, {
         color: 0x323232,
         checked: localStorage.getItem('effects-enabled') == 'true' || localStorage.getItem('effects-enabled') == 'false' ? localStorage.getItem('effects-enabled') == 'true' : true,
         animationDuration: 150
@@ -79,11 +79,11 @@ function drawSettingsMenu() {
         localStorage.setItem('effects-enabled', effectsCheckbox.checked)
     });
 
-    let effectsCheckboxText = this.add.text(screenWidth / 8, screenHeight / 2.1, 'Effects', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}).setOrigin(0.5, 0).setInteractive().on('pointerdown', () => effectsCheckbox.toggleChecked());
+    let effectsCheckboxText = this.add.text(screenWidth / 8, screenHeight / 2.3, 'Effects', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}).setOrigin(0.5, 0).setInteractive().on('pointerdown', () => effectsCheckbox.toggleChecked());
     effectsCheckboxText.setOrigin(0, 0.4).depth = 5;
     this.settingsMenuObjects.add(effectsCheckboxText);
 
-    let sliderDot = this.add.circle(screenWidth / 5.15, screenHeight / 1.5, screenWidth / 115, 0xffffff, 0.75)
+    let sliderDot = this.add.circle(screenWidth / 5.15, screenHeight / 1.6, screenWidth / 115, 0xffffff, 0.75)
     sliderDot.slider = this.plugins.get('rexsliderplugin').add(sliderDot, {
         endPoints: [{
                 x: sliderDot.x - screenWidth / 9.5,
@@ -103,11 +103,11 @@ function drawSettingsMenu() {
     sliderBar.lineStyle(5, 0x373737, 1).strokePoints(sliderDot.slider.endPoints).depth = 4;
     this.settingsMenuObjects.add(sliderBar);
 
-    let sliderDotText = this.add.text(screenWidth / 5.15, screenHeight / 1.7, 'General volume', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}).setOrigin(0.5, 0);
+    let sliderDotText = this.add.text(screenWidth / 5.15, screenHeight / 1.85, 'General volume', { fontFamily: 'pixel_nums', fontSize: (screenWidth / 60), align: 'center'}).setOrigin(0.5, 0);
     sliderDotText.depth = 5;
     this.settingsMenuObjects.add(sliderDotText);
 
-    let sliderPercentageText = this.add.text(screenWidth / 5.15, screenHeight / 1.43, Math.trunc(sliderDot.slider.value * 100), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 80), align: 'center'}).setOrigin(0.5, 0);
+    let sliderPercentageText = this.add.text(screenWidth / 5.15, screenHeight / 1.5, Math.trunc(sliderDot.slider.value * 100), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 80), align: 'center'}).setOrigin(0.5, 0);
     sliderPercentageText.depth = 5;
     this.settingsMenuObjects.add(sliderPercentageText);
 

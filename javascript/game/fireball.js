@@ -77,18 +77,30 @@ function fireballCollides(fireball, entitie) {
 
 function explodeFireball(fireball) {
     fireball.anims.play('fireball-explosion-1', true);
-    setTimeout(() => {
-        if (fireball)
-        fireball.anims.play('fireball-explosion-2', true);
-        setTimeout(() => {
-            if (fireball)
-            fireball.anims.play('fireball-explosion-3', true);
-            setTimeout(() => {
-                if (fireball)
-                    fireball.destroy();
-            }, 45);
-        }, 35);
-    }, 50);
+
+    const destroyFireball = () => {
+      if (fireball) {
+        fireball.destroy();
+      }
+    };
+    
+    Promise.resolve()
+      .then(() => new Promise(resolve => setTimeout(() => {
+        if (fireball) {
+          fireball.anims.play('fireball-explosion-2', true);
+        }
+        resolve();
+      }, 50)))
+      .then(() => new Promise(resolve => setTimeout(() => {
+        if (fireball) {
+          fireball.anims.play('fireball-explosion-3', true);
+        }
+        resolve();
+      }, 35)))
+      .then(() => new Promise(resolve => setTimeout(() => {
+        destroyFireball();
+        resolve();
+      }, 45)));    
 }
 
 function updateFireballAnimation(fireball) {
