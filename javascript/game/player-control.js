@@ -106,9 +106,9 @@ function updatePlayer(delta) {
     // https://codepen.io/rexrainbow/pen/oyqvQY
 
     // > Vertical movement
-    if ((cursors.up.isDown || controlKeys.SPACE.isDown || this.joyStick.up) && player.body.touching.down) {
+    if ((controlKeys.JUMP.isDown || this.joyStick.up) && player.body.touching.down) {
         this.jumpSound.play();
-        (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) ? player.setVelocityY(-velocityY / 1.25) : player.setVelocityY(-velocityY);
+        (playerState > 0 && (controlKeys.DOWN.isDown|| this.joyStick.down)) ? player.setVelocityY(-velocityY / 1.25) : player.setVelocityY(-velocityY);
     }
 
     // > Horizontal movement and animations
@@ -116,7 +116,7 @@ function updatePlayer(delta) {
     let targetVelocityX;
     let newVelocityX;
 
-    if (cursors.left.isDown || controlKeys.A.isDown || this.joyStick.left) {
+    if (controlKeys.LEFT.isDown || this.joyStick.left) {
         smoothedControls.moveLeft(delta);
         if (!playerFiring) {
             if (playerState == 0)
@@ -138,7 +138,7 @@ function updatePlayer(delta) {
         newVelocityX = Phaser.Math.Linear(oldVelocityX, targetVelocityX, -smoothedControls.value);
 
         player.setVelocityX(newVelocityX);
-    } else if (cursors.right.isDown  || controlKeys.D.isDown || this.joyStick.right) {
+    } else if (controlKeys.RIGHT.isDown || this.joyStick.right) {
         smoothedControls.moveRight(delta);
         if (!playerFiring) {
             if (playerState == 0)
@@ -165,7 +165,7 @@ function updatePlayer(delta) {
             smoothedControls.reset();
         if (player.body.touching.down)
             player.setVelocityX(0);
-        if (!cursors.up.isDown && !playerFiring) {
+        if (!(controlKeys.JUMP.isDown|| this.joyStick.up) && !playerFiring) {
             if (playerState == 0)
             player.anims.play('idle', true);
     
@@ -178,7 +178,7 @@ function updatePlayer(delta) {
     }
 
     if (!playerFiring) {
-        if (playerState > 0 && (cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) {
+        if (playerState > 0 && (controlKeys.DOWN.isDown|| this.joyStick.down)) {
             if (playerState == 1)
             player.anims.play('grown-mario-crouch', true);
 
@@ -201,7 +201,7 @@ function updatePlayer(delta) {
         }
     }
 
-    if (player.body.touching.down && playerState == 2 && controlKeys.Q.isDown && !fireInCooldown) {
+    if (player.body.touching.down && playerState == 2 && controlKeys.FIRE.isDown && !fireInCooldown) {
         throwFireball.call(this);
         return;
     }

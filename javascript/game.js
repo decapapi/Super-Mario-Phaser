@@ -30,7 +30,7 @@ var config = {
         create: create,
         update: update
     },
-    version: '0.7.1'
+    version: '0.7.2'
 };
 
 const worldWidth = screenWidth * 11;
@@ -60,17 +60,14 @@ var furthestPlayerPos = 0;
 
 var flagRaised = false;
 
-var arrowKeys;
 var controlKeys = {
-    W: null,
-    A: null,
-    S: null,
-    D: null,
-    Q: null,
-    SPACE: null
+    JUMP: null,
+    DOWN: null,
+    LEFT: null,
+    RIGHT: null,
+    FIRE: null
 };
 
-var cursors;
 var score = 0;
 var timeLeft = 300;
 
@@ -150,6 +147,7 @@ function preload() {
         progressBar.destroy();
         progressBox.destroy();
         percentText.destroy();
+        loadingGif.style.visibility = "hidden";
     });
 
     // Load Fonts
@@ -176,8 +174,6 @@ function preload() {
     // Load objects sprites
     this.load.spritesheet('fireball', 'assets/entities/fireball.png', { frameWidth: 8, frameHeight: 8 });
     this.load.spritesheet('fireball-explosion', 'assets/entities/fireball-explosion.png', { frameWidth: 16, frameHeight: 16 });
-
-    this.load.image('arrows', 'assets/controls/arrows.png');
 
     // Load props
     this.load.image('cloud1', 'assets/scenery/overworld/cloud1.png');
@@ -342,8 +338,6 @@ function create() {
     createGoombas.call(this);
     createControls.call(this);
     applySettings.call(this);
-
-    loadingGif.style.visibility = "hidden";
     
     smoothedControls = new SmoothedHorionztalControl(0.001);
 }
@@ -361,16 +355,32 @@ function createControls() {
         // enable: true
     });
 
-    // Create controls cursor keys
-    cursors = this.input.keyboard.createCursorKeys();
+    // Set control keys
 
-    // Create WASD Controls
-    controlKeys.W = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-    controlKeys.A = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    controlKeys.S = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-    controlKeys.D = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    controlKeys.Q = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-    controlKeys.SPACE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    if (localStorage.getItem('JUMP'))
+        controlKeys.JUMP = this.input.keyboard.addKey(Number(localStorage.getItem('JUMP')));
+    else
+        controlKeys.JUMP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    if (localStorage.getItem('DOWN'))
+        controlKeys.DOWN = this.input.keyboard.addKey(Number(localStorage.getItem('DOWN')));
+    else
+        controlKeys.DOWN = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+
+    if (localStorage.getItem('LEFT'))
+        controlKeys.LEFT = this.input.keyboard.addKey(Number(localStorage.getItem('LEFT')));
+    else
+        controlKeys.LEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+
+    if (localStorage.getItem('RIGHT'))
+        controlKeys.RIGHT = this.input.keyboard.addKey(Number(localStorage.getItem('RIGHT')));
+    else
+        controlKeys.RIGHT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+
+    if (localStorage.getItem('FIRE'))
+        controlKeys.FIRE = this.input.keyboard.addKey(Number(localStorage.getItem('FIRE')));
+    else
+        controlKeys.FIRE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 }
 
 // This will generate a random coordinate, that can't be within a hole
@@ -757,17 +767,18 @@ function drawStartScreen() {
 
     this.customBlock = this.add.sprite(screenCenterX, screenHeight - (platformHeight * 1.9),'custom-block').setScale(screenHeight / 345);
     this.customBlock.anims.play('custom-block-default')
-    this.physics.add.collider(player, this.customBlock, showSettings, null, this);
+    this.physics.add.collider(player, this.customBlock, function() {
+        if (player.body.blocked.up) showSettings.call(this);
+    }, null, this);
     this.physics.add.existing(this.customBlock);
     this.customBlock.body.allowGravity = false;
     this.customBlock.body.immovable = true;
 
-    this.add.image(screenCenterX, screenHeight - (platformHeight * 1.9), 'gear').setScale(screenHeight / 13000);
+    this.add.image(screenCenterX, screenHeight - (platformHeight * 1.9), 'gear').setScale(screenHeight / 13000).setInteractive().on('pointerdown', () => showSettings.call(this));
 
     this.add.image(screenCenterX * 1.12, screenHeight - (platformHeight * 1.5), 'settings-bubble').setScale(screenHeight / 620);
 
-    this.npc = this.add.sprite(screenCenterX * 1.07, screenHeight - platformHeight, 'npc').setOrigin(0.5, 1).setScale(screenHeight / 365);
-    this.npc.anims.play('npc-default', true);
+    this.add.sprite(screenCenterX * 1.07, screenHeight - platformHeight, 'npc').setOrigin(0.5, 1).setScale(screenHeight / 365).anims.play('npc-default', true);
 }
 
 function raiseFlag() {

@@ -99,7 +99,7 @@ function destroyBlock(player, block) {
             }, 100);
         }
         
-        if (playerState > 0 && !(cursors.down.isDown || controlKeys.S.isDown|| this.joyStick.down)) {
+        if (playerState > 0 && !(controlKeys.DOWN.isDown|| this.joyStick.down)) {
             this.breakBlockSound.play();
             addToScore.call(this, 50)
             drawDestroyedBlockParticles.call(this, block);

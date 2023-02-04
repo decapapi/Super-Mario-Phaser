@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Mario Phaser</title>
     <link rel="icon" type="image/x-icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="assets/others/loading.gif" />
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
@@ -27,14 +28,14 @@
         height: 100%;
         width: 100%;
         color: #f0f0f0;
-        font-family: 'Quicksand', sans-serif;
+        font-family: pixel_nums;
       }
       #game {
         margin: 0px;
         padding: 0px;
         height: 100%;
         width: 100%;
-        font-family: 'pixel_nums';
+        font-family: pixel_nums;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -46,6 +47,7 @@
         top: 30%;
         left: 50%;
         transform: translate(-50%, -50%);
+        filter: drop-shadow(20px 15px 10px rgb(53, 53, 53));
       }
 
       /* Noscript alert */
@@ -64,6 +66,7 @@
         padding-left: 4rem;
         margin-left: 50%;
         margin-right: 50%;
+        font-family: 'Quicksand', sans-serif;
       }
       .blurbg{
           position: fixed;
@@ -97,16 +100,6 @@
       </div>
     </noscript>
 
-    <script src="./javascript/game.js" type="text/javascript"></script>
-    <script src="./javascript/game/animations.js" type="text/javascript"></script>
-    <script src="./javascript/game/blocks.js" type="text/javascript"></script>
-    <script src="./javascript/game/strucutres.js" type="text/javascript"></script>
-    <script src="./javascript/game/settings.js" type="text/javascript"></script>
-    <script src="./javascript/game/fireball.js" type="text/javascript"></script>
-    <script src="./javascript/game/player-control.js" type="text/javascript"></script>
-    <script src="./javascript/game/hud-control.js" type="text/javascript"></script>
-    <script src="./javascript/game/entities-control.js" type="text/javascript"></script>
-    <script src="./javascript/helpers/screenshot.js" type="text/javascript"></script>
-    <script src="./javascript/helpers/window-title.js" type="text/javascript"></script>
+    <script src="./javascript/game.js" type="text/javascript"></script><script src="./javascript/game/animations.js" type="text/javascript"></script><script src="./javascript/game/blocks.js" type="text/javascript"></script><script src="./javascript/game/strucutres.js" type="text/javascript"></script><script src="./javascript/game/settings.js" type="text/javascript"></script><script src="./javascript/game/fireball.js" type="text/javascript"></script><script src="./javascript/game/player-control.js" type="text/javascript"></script><script src="./javascript/game/hud-control.js" type="text/javascript"></script><script src="./javascript/game/entities-control.js" type="text/javascript"></script><script src="./javascript/helpers/screenshot.js" type="text/javascript"></script><script src="./javascript/helpers/window-title.js" type="text/javascript"></script>
   </body>
 </html>

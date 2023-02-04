@@ -1,13 +1,13 @@
 
+var keydownHandler;
+
 function showSettings() {
-    if(player.body.blocked.up) {
-        player.anims.play('idle', true);
-        playerBlocked = true;
-        player.setVelocityX(0);
-        this.musicTheme.pause();
-        this.pauseSound.play();
-        drawSettingsMenu.call(this);
-    }
+    player.anims.play('idle', true);
+    playerBlocked = true;
+    player.setVelocityX(0);
+    this.musicTheme.pause();
+    this.pauseSound.play();
+    drawSettingsMenu.call(this);
 }
 
 function hideSettings() {
@@ -20,8 +20,6 @@ function hideSettings() {
     playerBlocked = false;
     applySettings.call(this);
 }
-
-//https://codepen.io/rexrainbow/pen/YMyBom
 
 function drawSettingsMenu() {
 
@@ -137,6 +135,101 @@ function drawSettingsMenu() {
     controlsText.depth = 5;
     this.settingsMenuObjects.add(controlsText);
 
+    // Special thanks to chatGPT for making this list for me
+    const specialCharMap = {
+        8: 'BACKSPACE',
+        9: 'TAB',
+        13: 'ENTER',
+        16: 'SHIFT',
+        17: 'CTRL',
+        18: 'ALT',
+        20: 'CAPS',
+        27: 'ESCAPE',
+        32: 'SPACE',
+        33: 'PAGE UP',
+        34: 'PAGE DOWN',
+        35: 'END',
+        36: 'HOME',
+        37: '←',
+        38: '↑',
+        39: '→',
+        40: '↓',
+        45: 'INSERT',
+        46: 'DELETE',
+        112: 'F1',
+        113: 'F2',
+        114: 'F3',
+        115: 'F4',
+        116: 'F5',
+        117: 'F6',
+        118: 'F7',
+        119: 'F8',
+        120: 'F9',
+        121: 'F10',
+        122: 'F11',
+        123: 'F12',
+        192: 'Ñ',
+        219: '?',
+        220: '¿'
+    };
+
+    const displayChar = charCode => specialCharMap[charCode] || String.fromCharCode(charCode);
+
+    const directionTexts = [
+        {
+            control: 'JUMP',
+            text: this.add.text(screenWidth / 1.37, screenHeight / 2.25, displayChar(controlKeys.JUMP.keyCode), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}),
+            icon: this.add.sprite(screenWidth / 1.37, screenHeight / 2, 'mario').setScale(screenHeight / 500).setOrigin(0.5).anims.play('jump')
+        },
+        {
+            control: 'DOWN',
+            text: this.add.text(screenWidth / 1.37, screenHeight / 1.75, displayChar(controlKeys.DOWN.keyCode), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}),
+            icon: this.add.sprite(screenWidth / 1.37, screenHeight / 1.68, 'mario-grown').setScale(screenHeight / 550).setOrigin(0.6, 0).anims.play('grown-mario-crouch')
+        },
+        {
+            control: 'LEFT',
+            text: this.add.text(screenWidth / 1.5, screenHeight / 1.75, displayChar(controlKeys.LEFT.keyCode), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}),
+            icon: this.add.sprite(screenWidth / 1.56, screenHeight / 1.75, 'mario').setScale(screenHeight / 500).setFlipX(true).setOrigin(0.6, 0.5)
+        },
+        {
+            control: 'RIGHT',
+            text: this.add.text(screenWidth / 1.26, screenHeight / 1.75, displayChar(controlKeys.RIGHT.keyCode), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}),
+            icon: this.add.sprite(screenWidth / 1.22, screenHeight / 1.75, 'mario').setScale(screenHeight / 500).setOrigin(0.6, 0.5)
+        },
+        {
+            control: 'FIRE',
+            text: this.add.text(screenWidth / 1.65, screenHeight / 2.5, displayChar(controlKeys.FIRE.keyCode), { fontFamily: 'pixel_nums', fontSize: (screenWidth / 55), align: 'center'}),
+            icon: this.add.sprite(screenWidth / 1.65, screenHeight / 2.25, 'fireball').setScale(screenHeight / 300).setOrigin(0.5).anims.play('fireball-right-down', true)
+        },
+    ];
+
+    directionTexts.forEach(({control, text, icon}) => {
+        text.setInteractive().setOrigin(0.5, 0.4).depth = 5;
+        icon.depth = 5;
+        this.settingsMenuObjects.add(text);
+        this.settingsMenuObjects.add(icon);
+
+        text.on('pointerdown', function () {
+            text.setText('...');
+    
+            keydownHandler = function (event) {
+                document.removeEventListener('keydown', keydownHandler);
+    
+                let key = event.keyCode;
+    
+                if (Object.values(controlKeys).some(({ keyCode }) => keyCode === key)) {
+                    alert('Key is already in use!');
+                    text.setText(displayChar(controlKeys[control].keyCode));
+                    return;
+                }
+    
+                controlKeys[control] = this.input.keyboard.addKey(key);
+                text.setText(displayChar(controlKeys[control].keyCode));
+                localStorage.setItem(control, controlKeys[control].keyCode);
+            }.bind(this);
+            document.addEventListener('keydown', keydownHandler);
+        }.bind(this));
+    });
 }
 
 function applySettings() {
