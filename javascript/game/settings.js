@@ -2,12 +2,15 @@
 var keydownHandler;
 
 function showSettings() {
-    player.anims.play('idle', true);
-    playerBlocked = true;
-    player.setVelocityX(0);
-    this.musicTheme.pause();
-    this.pauseSound.play();
-    drawSettingsMenu.call(this);
+    if (!this.settingsMenuOpen) {
+        this.settingsMenuOpen = true;
+        player.anims.play('idle', true);
+        playerBlocked = true;
+        player.setVelocityX(0);
+        this.musicTheme.pause();
+        this.pauseSound.play();
+        drawSettingsMenu.call(this);
+    }
 }
 
 function hideSettings() {
@@ -19,6 +22,7 @@ function hideSettings() {
     this.musicTheme.resume();
     playerBlocked = false;
     applySettings.call(this);
+    this.settingsMenuOpen = false;
 }
 
 function drawSettingsMenu() {

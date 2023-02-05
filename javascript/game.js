@@ -1,4 +1,4 @@
-const loadingGif = document.querySelector('.loading-gif');
+const loadingGif = document.querySelectorAll('.loading-gif');
 
 const mobileDevice = isMobileDevice();
 
@@ -30,7 +30,7 @@ var config = {
         create: create,
         update: update
     },
-    version: '0.7.2'
+    version: '0.7.3'
 };
 
 const worldWidth = screenWidth * 11;
@@ -130,7 +130,7 @@ function preload() {
         y: height / 2 * 1.25,
         text: '0%',
         style: {
-            font: '20px pixel_nums',
+            font: screenWidth / 96 + 'px pixel_nums',
             fill: '#ffffff'
         }
     });
@@ -147,7 +147,7 @@ function preload() {
         progressBar.destroy();
         progressBox.destroy();
         percentText.destroy();
-        loadingGif.style.visibility = "hidden";
+        loadingGif.forEach(gif => {gif.style.display = 'none';});
     });
 
     // Load Fonts
@@ -668,6 +668,7 @@ function startLevel(player, trigger) {
         updateTimer.call(this);
         this.startScreenTrigger.destroy();
         levelStarted = true;
+        if (this.settingsMenuOpen)hideSettings.call(this);
     }, 1100);
 }
 

@@ -40,14 +40,23 @@
         align-items: center;
         justify-content: center;
       }
-      .loading-gif {
+      #gif {
         height: 30%;
         position: absolute;
         z-index: 100;
         top: 30%;
         left: 50%;
         transform: translate(-50%, -50%);
-        filter: drop-shadow(20px 15px 10px rgb(53, 53, 53));
+      }
+      #gif-shadow {
+        height: 30%;
+        position: absolute;
+        z-index: 99;
+        top: 31%;
+        left: 51%;
+        transform: translate(-50%, -50%);
+        opacity: 0.2;
+        filter: brightness(5%) blur(5px);
       }
 
       /* Noscript alert */
@@ -86,7 +95,8 @@
   </head>
   <body>
     <div id="game">
-      <img src="assets/others/loading.gif" class="loading-gif">
+      <img id="gif" src="assets/others/loading.gif" class="loading-gif">
+      <img id="gif-shadow" src="assets/others/loading.gif" class="loading-gif">
     </div>
 
     <noscript>

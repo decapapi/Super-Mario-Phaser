@@ -65,7 +65,7 @@ function applyPlayerInvulnerability(time) {
 }
 
 function updatePlayer(delta) {
-    
+
     // Win animation
     if (playerBlocked && flagRaised) {
         player.setVelocityX(screenWidth / 8.5);
@@ -90,6 +90,12 @@ function updatePlayer(delta) {
         }, 5000);
         return;
     }
+
+    if (player.body.blocked.up)
+        player.setVelocityY(0);
+
+    if (player.body.blocked.left || player.body.blocked.right)
+        player.setVelocityX(0);
 
     // Check if player has fallen
     if (player.y > screenHeight - 10 || timeLeft <= 0) {
