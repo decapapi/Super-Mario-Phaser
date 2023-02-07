@@ -21,7 +21,7 @@ var config = {
         default: 'arcade',
         arcade: {
             gravity: { y: levelGravity },
-            debug: false
+            debug: true
         }
     },
     scene: {
@@ -65,7 +65,9 @@ var controlKeys = {
     DOWN: null,
     LEFT: null,
     RIGHT: null,
-    FIRE: null
+    FIRE: null,
+    PAUSE: null
+
 };
 
 var score = 0;
@@ -81,8 +83,7 @@ var gameWinned = false;
 var game = new Phaser.Game(config);
 
 function isMobileDevice() {
-    const userAgent = navigator.userAgent;
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 // Source: https://github.com/photonstorm/phaser3-examples/blob/master/public/src/tilemap/collision/matter%20destroy%20tile%20bodies.js#L35
@@ -159,7 +160,7 @@ function preload() {
     this.load.plugin('rexsliderplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexsliderplugin.min.js', true);
     this.load.plugin('rexkawaseblurpipelineplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexkawaseblurpipelineplugin.min.js', true);
 
-    isLevelOverworld = Phaser.Math.Between(0, 100) <= 84;
+    isLevelOverworld = false//Phaser.Math.Between(0, 100) <= 84;
 
     let levelStyle = isLevelOverworld ? 'overworld' : 'underground';
 
@@ -357,30 +358,21 @@ function createControls() {
 
     // Set control keys
 
-    if (localStorage.getItem('JUMP'))
-        controlKeys.JUMP = this.input.keyboard.addKey(Number(localStorage.getItem('JUMP')));
-    else
-        controlKeys.JUMP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    const keyNames = ['JUMP', 'DOWN', 'LEFT', 'RIGHT', 'FIRE', 'PAUSE'];
+    const defaultCodes = [Phaser.Input.Keyboard.KeyCodes.SPACE, Phaser.Input.Keyboard.KeyCodes.S, Phaser.Input.Keyboard.KeyCodes.A, Phaser.Input.Keyboard.KeyCodes.D, Phaser.Input.Keyboard.KeyCodes.Q, Phaser.Input.Keyboard.KeyCodes.ESC];
+    
+    keyNames.forEach((keyName, i) => {
+      const keyCode = localStorage.getItem(keyName) ? Number(localStorage.getItem(keyName)) : defaultCodes[i];
+      controlKeys[keyName] = this.input.keyboard.addKey(keyCode);
+    });
 
-    if (localStorage.getItem('DOWN'))
-        controlKeys.DOWN = this.input.keyboard.addKey(Number(localStorage.getItem('DOWN')));
-    else
-        controlKeys.DOWN = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-
-    if (localStorage.getItem('LEFT'))
-        controlKeys.LEFT = this.input.keyboard.addKey(Number(localStorage.getItem('LEFT')));
-    else
-        controlKeys.LEFT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-
-    if (localStorage.getItem('RIGHT'))
-        controlKeys.RIGHT = this.input.keyboard.addKey(Number(localStorage.getItem('RIGHT')));
-    else
-        controlKeys.RIGHT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-
-    if (localStorage.getItem('FIRE'))
-        controlKeys.FIRE = this.input.keyboard.addKey(Number(localStorage.getItem('FIRE')));
-    else
-        controlKeys.FIRE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+    /*
+    controlKeys.PAUSE.on('down', function () {
+        if (!this.settingsMenuOpen)
+            showSettings.call(this);
+        else
+            hideSettings.call(this);
+    });*/
 }
 
 // This will generate a random coordinate, that can't be within a hole
@@ -494,7 +486,7 @@ function generateLevel() {
     if (!isLevelOverworld) {
         //this.blocksGroup.add(this.add.tileSprite(worldWidth - screenWidth, screenHeight - (platformHeight * 4.5), screenWidth * 2.9, 16, 'block').setScale(screenHeight / 345).setOrigin(1, 0));
         this.blocksGroup.add(this.add.tileSprite(screenWidth, screenHeight - platformHeight / 1.2, 16, screenHeight - platformHeight, 'block2').setScale(screenHeight / 345).setOrigin(0, 1));
-        this.blocksGroup.add(this.add.tileSprite(screenWidth * 1.2, screenHeight / 13, worldWidth - screenWidth, 16, 'block2').setScale(screenHeight / 345).setOrigin(0));
+        this.blocksGroup.add(this.add.tileSprite(screenWidth * 1.2, screenHeight / 13, worldWidth / 2.68, 16, 'block2').setScale(screenHeight / 345).setOrigin(0));
     }
 
     for (i=0; i <= platformPieces; i++) {
@@ -815,6 +807,8 @@ function raiseFlag() {
 }
 
 function consumeMushroom(player, mushroom) {
+    if (gameOver || gameWinned) return;
+
     this.consumePowerUpSound.play();
     addToScore.call(this, 1000, mushroom);
     mushroom.destroy();
@@ -847,6 +841,8 @@ function consumeMushroom(player, mushroom) {
 }
 
 function consumeFireflower(player, fireFlower) {
+    if (gameOver || gameWinned) return;
+
     this.consumePowerUpSound.play();
     addToScore.call(this, 1000, fireFlower);
     fireFlower.destroy();

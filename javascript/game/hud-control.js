@@ -49,34 +49,41 @@ function updateTimer() {
 }
 
 function addToScore(num, originObject) {
-
+    
     for (i = 1; i <= num; i++) {
         setTimeout(() => {
             score++;
             updateScore.call(this);
         }, i);
     }
-
-    if (originObject != null) {
-        let textEffect = this.add.text(originObject.getBounds().x, originObject.getBounds().y, num, { fontFamily: 'pixel_nums', fontSize: (screenWidth / 150), align: 'center'});
-        textEffect.setOrigin(0).smoothed = true;
-        textEffect.depth = 5;
+    
+    if (!originObject) return;
+    
+    const textEffect = this.add.text(originObject.getBounds().x, originObject.getBounds().y, num, {
+      fontFamily: 'pixel_nums',
+      fontSize: (screenWidth / 150),
+      align: 'center'
+    });
+    
+    textEffect.setOrigin(0).smoothed = true;
+    textEffect.depth = 5;
+    
+    this.tweens.add({
+      targets: textEffect,
+      duration: 600,
+      y: textEffect.y - screenHeight / 6.5,
+      onComplete: () => {
         this.tweens.add({
-            targets: textEffect,
-            duration: 600,
-            y: textEffect.y - screenHeight / 6.5
+          targets: textEffect,
+          duration: 100,
+          alpha: 0,
+          onComplete: () => {
+            textEffect.destroy();
+          }
         });
-        setTimeout(() => { 
-            this.tweens.add({
-                targets: textEffect,
-                duration: 100,
-                alpha: 0
-            });
-         }, 500);
-
-        setTimeout(() => { textEffect.destroy(); }, 600);
-    }
-}
+      }
+    });
+  }
 
 
 // Game over functions

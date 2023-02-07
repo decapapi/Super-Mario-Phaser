@@ -4,7 +4,7 @@ const goombasVelocityX = screenWidth / 19
 function createGoombas() {
     this.goombasGroup = this.add.group();
 
-    for (i = 0; i < Phaser.Math.Between(Math.trunc(worldWidth / 960), Math.trunc(worldWidth / isLevelOverworld ? 760 : 800)); i++) {
+    for (i = 0; i < Math.trunc(worldWidth / 960); i++) {
         let x = generateRandomCoordinate(true);
         let goomba = this.physics.add.sprite(x, screenHeight - platformHeight, 'goomba').setOrigin(0.5, 1).setBounce(1, 0).setScale(screenHeight / 376);
         goomba.anims.play('goomba-walk', true);
@@ -32,7 +32,7 @@ function createGoombas() {
     // Create collision with fall protections to stop goombas from falling off the map
     this.physics.add.collider(this.goombasGroup.getChildren(), this.immovableBlocksGroup.getChildren());
     this.physics.add.collider(this.goombasGroup.getChildren(), this.fallProtectionGroup.getChildren());
-    this.physics.add.collider(this.goombasGroup.getChildren(), this.finalTrigger);    
+    this.physics.add.collider(this.goombasGroup.getChildren(), this.finalTrigger);
 
     setInterval(clearGoombas.call(this), 250);
 }

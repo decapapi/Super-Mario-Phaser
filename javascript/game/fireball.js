@@ -30,6 +30,7 @@ function throwFireball() {
     this.physics.add.collider(fireball, this.platformGroup.getChildren(), fireballBounce, null, this);
     this.physics.add.overlap(fireball, this.goombasGroup.getChildren(), fireballCollides, null, this);
     this.physics.add.collider(fireball, this.immovableBlocksGroup.getChildren(), fireballBounce, null, this);
+    this.physics.add.collider(fireball, this.constructionBlocksGroup.getChildren(), fireballBounce, null, this);
 
     setTimeout(() => {
         fireball.dead = true;
