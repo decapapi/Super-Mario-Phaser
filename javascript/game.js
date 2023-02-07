@@ -21,7 +21,7 @@ var config = {
         default: 'arcade',
         arcade: {
             gravity: { y: levelGravity },
-            debug: true
+            debug: false
         }
     },
     scene: {
@@ -160,7 +160,7 @@ function preload() {
     this.load.plugin('rexsliderplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexsliderplugin.min.js', true);
     this.load.plugin('rexkawaseblurpipelineplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexkawaseblurpipelineplugin.min.js', true);
 
-    isLevelOverworld = false//Phaser.Math.Between(0, 100) <= 84;
+    isLevelOverworld = Phaser.Math.Between(0, 100) <= 84;
 
     let levelStyle = isLevelOverworld ? 'overworld' : 'underground';
 
