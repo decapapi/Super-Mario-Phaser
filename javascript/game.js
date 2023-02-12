@@ -486,7 +486,8 @@ function generateLevel() {
     if (!isLevelOverworld) {
         //this.blocksGroup.add(this.add.tileSprite(worldWidth - screenWidth, screenHeight - (platformHeight * 4.5), screenWidth * 2.9, 16, 'block').setScale(screenHeight / 345).setOrigin(1, 0));
         this.blocksGroup.add(this.add.tileSprite(screenWidth, screenHeight - platformHeight / 1.2, 16, screenHeight - platformHeight, 'block2').setScale(screenHeight / 345).setOrigin(0, 1));
-        this.blocksGroup.add(this.add.tileSprite(screenWidth * 1.2, screenHeight / 13, worldWidth / 2.68, 16, 'block2').setScale(screenHeight / 345).setOrigin(0));
+        this.undergroundRoof = this.add.tileSprite(screenWidth * 1.2, screenHeight / 13, worldWidth / 2.68, 16, 'block2').setScale(screenHeight / 345).setOrigin(0);
+        this.blocksGroup.add(this.undergroundRoof);
     }
 
     for (i=0; i <= platformPieces; i++) {
@@ -685,6 +686,8 @@ function teleportToLevelEnd(player, trigger) {
     this.cameras.main.fadeOut(450, 0, 0, 0);
 
     player.anims.play(playerState > 0 ? playerState == 1 ? 'grown-mario-run'  : 'fire-mario-run' : 'run', true).flipX = false;
+
+    this.undergroundRoof.destroy();
 
     setTimeout(() => {
         this.physics.world.setBounds(worldWidth - screenWidth, 0, worldWidth, screenHeight);
