@@ -377,24 +377,23 @@ function createControls() {
 
 // This will generate a random coordinate, that can't be within a hole
 
-function generateRandomCoordinate(entitie=false, ground=true) {
-
-    let startPos = entitie ? screenWidth * 1.5 : screenWidth;
-    let endPos = entitie ? (worldWidth - screenWidth * 3) : worldWidth; 
-
+function generateRandomCoordinate(entitie = false, ground = true) {
+    const startPos = entitie ? screenWidth * 1.5 : screenWidth;
+    const endPos = entitie ? worldWidth - screenWidth * 3 : worldWidth;
+  
     let coordinate = Phaser.Math.Between(startPos, endPos);
-
-    if (!ground)
-        return coordinate;
-
+  
+    if (!ground) return coordinate;
+  
     for (let hole of worldHolesCoords) {
-      if (coordinate >= (hole.start - (platformPiecesWidth * 1.5)) && coordinate <= hole.end) {
+      if (coordinate >= hole.start - platformPiecesWidth * 1.5 && coordinate <= hole.end) {
         return generateRandomCoordinate.call(this, entitie, ground);
       }
     }
-
+  
     return coordinate;
-}
+  }
+  
 
 // World generation
 
@@ -887,27 +886,29 @@ function collectCoin(player, coin) {
 }
 
 function update(delta) {
-
     if (gameOver || gameWinned) return;
 
     updatePlayer.call(this, delta);
 
-    if (player.body.velocity.x > 0 && levelStarted && !reachedLevelEnd && !this.cameras.main.isFollowing
-        && player.x >= screenWidth * 1.5 && player.x >= (this.cameras.main.worldView.x + this.cameras.main.width / 2)) {
-        this.cameras.main.isFollowing = true;
-        this.cameras.main.startFollow(player, true, 0.1, 0.05);
+    const playerVelocityX = player.body.velocity.x;
+    const camera = this.cameras.main;
+
+    if (playerVelocityX > 0 && levelStarted && !reachedLevelEnd && !camera.isFollowing &&
+        player.x >= screenWidth * 1.5 && player.x >= (camera.worldView.x + camera.width / 2)) {
+        camera.startFollow(player, true, 0.1, 0.05);
+        camera.isFollowing = true;
     }
 
-    if (player.body.velocity.x < 0 && furthestPlayerPos < player.x && levelStarted && !reachedLevelEnd && this.cameras.main.isFollowing) {
+    if (playerVelocityX < 0 && furthestPlayerPos < player.x && levelStarted && !reachedLevelEnd && camera.isFollowing) {
         furthestPlayerPos = player.x;
-        this.physics.world.setBounds(this.cameras.main.worldView.x, 0, worldWidth, screenHeight);
-        this.cameras.main.setBounds(this.cameras.main.worldView.x, 0, worldWidth, screenHeight);
-        this.cameras.main.stopFollow();
-        this.cameras.main.isFollowing = false;
+        const worldBounds = this.physics.world.setBounds(camera.worldView.x, 0, worldWidth, screenHeight);
+        camera.setBounds(camera.worldView.x, 0, worldWidth, screenHeight);
+        camera.stopFollow();
+        camera.isFollowing = false;
     }
 
-    if (!reachedLevelEnd && !isLevelOverworld && this.cameras.main.isFollowing && player.x >= worldWidth - screenWidth * 1.5) {
+    if (!reachedLevelEnd && !isLevelOverworld && camera.isFollowing && player.x >= worldWidth - screenWidth * 1.5) {
         reachedLevelEnd = true;
-        this.cameras.main.stopFollow();
+        camera.stopFollow();
     }
 }
