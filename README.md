@@ -13,7 +13,7 @@ Super Mario Phaser is a recreation of the classic Super Mario Bros game using th
 
 ### Demo
 
-A live demo of the game can be accessed at https://super-mario-phaser.pablogr.repl.co/.
+A live demo of the game can be accessed at [https://decapapi.github.io/Super-Mario-Phaser/](https://decapapi.github.io/Super-Mario-Phaser/).
 
 ### Controls
 
