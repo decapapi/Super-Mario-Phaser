@@ -15,6 +15,16 @@ Super Mario Phaser is a recreation of the classic Super Mario Bros game using th
 
 A live demo of the game can be accessed at [https://decapapi.github.io/Super-Mario-Phaser/](https://decapapi.github.io/Super-Mario-Phaser/).
 
+Some screenshots of the game:
+
+![Level Gameplay](https://i.imgur.com/HEA85Qx.gif)
+
+![Level Start](https://i.imgur.com/FDdU85G.gif)
+
+![Level End](https://i.imgur.com/XYaes9d.gif)
+
+![Settings Screen](https://i.imgur.com/JlrObgf.png)
+
 ### Controls
 
 Controls are fully customizable, however default controls are:
