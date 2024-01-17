@@ -17,32 +17,28 @@ A live demo of the game can be accessed at [https://decapapi.github.io/Super-Mar
 
 Some screenshots of the game:
 
-![Level Gameplay](https://i.imgur.com/HEA85Qx.gif)
+![Level Gameplay](assets/showcase/level-gameplay.gif)
 
-![Level Start](https://i.imgur.com/FDdU85G.gif)
+![Level Start](assets/showcase/level-start.gif)
 
-![Level End](https://i.imgur.com/XYaes9d.gif)
+![Level End](assets/showcase/level-end.gif)
 
-![Settings Screen](https://i.imgur.com/JlrObgf.png)
+![Settings Screen](assets/showcase/settings-screen.png)
 
 ### Controls
 
 Controls are fully customizable, however default controls are:
 
-Jump: SPACE
+**Jump:** SPACE
 
-Move Left: A
+**Move Left:** A
 
-Move Right: D
+**Move Right:** D
 
-Crouch: S
+**Crouch:** S
 
-Fire: Q
+**Fire:** Q
 
 ### Contributing
 
 Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request. Make sure to adhere to the existing code style and follow the established guidelines.
-
-### License
-
-*This project is licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). This means that you are free to use, modify, and distribute the code, but you must give appropriate credit to the original authors by providing a link to the GitHub repository of this project and mentioning the authors' names (e.g., in the game credits or accompanying documentation).*
